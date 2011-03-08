@@ -9,6 +9,7 @@ import android.content.pm.ActivityInfo;
 import android.graphics.*;
 import android.graphics.drawable.*;
 import android.content.Context;
+import java.math.*;
 
 public class ActionDefense extends Activity {
     LinearLayout mLinearLayout;
@@ -58,8 +59,6 @@ public class ActionDefense extends Activity {
             paint.setStrokeWidth(5.0f);
             paint.setTextSize(10.0f);
             widthHeight = new Rect(0,0,backgroundImg.getWidth(),backgroundImg.getHeight());
-            //tower = new Tower( 200.0f, 300.0f);
-            
     	}
 
     	protected void onDraw(Canvas canvas){
@@ -72,6 +71,8 @@ public class ActionDefense extends Activity {
     		canvas.drawLines(points, paint);
     		
     		drawTowers(canvas);
+    		
+    		buildFireList();
     		fireTowers(canvas);
 
             canvas.drawText("fps:"+fps, 50.0f, 50.0f, paint);
@@ -84,14 +85,14 @@ public class ActionDefense extends Activity {
         	float x = event.getX();
         	float y = event.getY();
         	
-        	addTower(x,y);
+        	addTower(x,y,50.0f);
         	
         	//tower.setFiring(true);
             return true;
         }
         
-    	private void addTower(float x, float y) {
-    		towers[numTowers] = new Tower(x, y);
+    	private void addTower(float x, float y, float fireRadius) {
+    		towers[numTowers] = new Tower(x, y, fireRadius);
     		numTowers++;
     		if(numTowers >= 25) {
     			numTowers = 24;
@@ -124,12 +125,35 @@ public class ActionDefense extends Activity {
     		}
     	}
     	
+    	private void buildFireList() {
+    		for( int i = 0; i < numTowers; i++ ) {
+    			for( int j = 0; j < numBaddies; j++ ) {
+    				if( checkCollision(towers[i], baddies[j]) ) {
+    					towers[i].setTarget(baddies[j]);
+    					towers[i].setFiring(true);
+    					break;
+    				}
+    			}
+    		}
+    	}
+    	
+    	private boolean checkCollision(Tower tower, Baddie baddie) {
+    		float distX = tower.getX() - baddie.getX();
+    		float distY = tower.getY() - baddie.getY();
+    		
+    		if( (distX * distX) + (distY * distY) < (tower.getFireRadius() + 20.0f) ) {
+    			return true;
+    		}
+    			
+    		return false;
+    	}
+    	
     	private void fireTowers(Canvas canvas) {
     		for(int i=0; i< numTowers; i++) {
 				if( towers[i].firing() ) {
 					canvas.drawCircle(towers[i].fireX(), towers[i].fireY(), 5.0f, paint);
-					towers[i].setFireX(towers[i].fireX()-1.0f);
-					towers[i].setFireY(towers[i].fireY()-1.0f);
+					towers[i].setFireX(towers[i].fireX() + (float)Math.cos(towers[i].fireX() - towers[i].getTarget().getX()));
+					towers[i].setFireY(towers[i].fireY() + (float)Math.sin(towers[i].fireY() - towers[i].getTarget().getY()));
 					
 					if( towers[i].fireY() <= 0 ) {
 						towers[i].setFiring(false);

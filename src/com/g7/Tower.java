@@ -1,12 +1,22 @@
 package com.g7;
 
 public class Tower {
-	private float _x, _y, _fireX, _fireY;
+	private float _x, _y, _fireX, _fireY, _fireRadius;
 	private boolean _fire = false;
+	private Baddie _baddieTarget;
 	
-	public Tower( float startX, float startY ) {
+	public Tower( float startX, float startY, float fireRadius ) {
 		_x = startX;
 		_y = startY;
+		_fireRadius = fireRadius;
+	}
+	
+	public void setTarget(Baddie baddie) {
+		_baddieTarget = baddie;
+	}
+	
+	public Baddie getTarget() {
+		return _baddieTarget;
 	}
 	
 	public void setFiring(boolean firing) {
@@ -15,6 +25,10 @@ public class Tower {
 	
 	public boolean firing() {
 		return _fire;
+	}
+	
+	public float getFireRadius() {
+		return _fireRadius;
 	}
 	
 	public void setFireX( float x ) {
