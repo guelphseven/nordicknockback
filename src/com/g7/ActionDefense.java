@@ -28,23 +28,24 @@ public class ActionDefense extends Activity {
         setContentView(new DrawableView(this));
     }
     
-    class DrawableView extends View{
+    class DrawableView extends View {
     	Context mContext;
         Bitmap backgroundImg;
         Bitmap icon;
         Paint paint;
         Rect widthHeight, iconWH;
+        
         int fps =0, frameCount = 0;
         long lastFrameTime, lastBaddieTime;
+        
+        int numBaddies = 0, numTowers = 0;
         Baddie[] baddies = new Baddie[25];
-        Tower tower;
-        int numBaddies = 0;
+        Tower[] towers = new Tower[25];
         
         float[] points = {
-        		10.0f, 250.0f, 250.0f, 250.0f,
-        		100.0f, 300.0f, 400.0f, 300.0f,
-        		200.0f, 350.0f, 300.0f, 350.0f,
-        		250.0f, 200.0f, 400.0f, 200.0f,
+        		0.0f, 250.0f, 500.0f, 250.0f,
+        		0.0f, 300.0f, 500.0f, 300.0f,
+        		0.0f, 350.0f, 500.0f, 350.0f,
         };
         
     	public DrawableView(Context context) {
@@ -57,7 +58,7 @@ public class ActionDefense extends Activity {
             paint.setStrokeWidth(5.0f);
             paint.setTextSize(10.0f);
             widthHeight = new Rect(0,0,backgroundImg.getWidth(),backgroundImg.getHeight());
-            tower = new Tower( 200.0f, 300.0f);
+            //tower = new Tower( 200.0f, 300.0f);
             
     	}
 
@@ -70,19 +71,8 @@ public class ActionDefense extends Activity {
     		
     		canvas.drawLines(points, paint);
     		
-    		drawTowers(canvas, tower.getX(), tower.getY(), 20.0f);
-    		
-    		if( tower.firing() ) {
-    			canvas.drawCircle(tower.fireX(), tower.fireY(), 5.0f, paint);
-    			tower.setFireX(tower.fireX()-1.0f);
-    			tower.setFireY(tower.fireY()-1.0f);
-    			
-    			if( tower.fireY() <= 0 ) {
-    				tower.setFiring(false);
-    				tower.setFireX(tower.getX());
-    				tower.setFireY(tower.getY());
-    			}
-    		}
+    		drawTowers(canvas);
+    		fireTowers(canvas);
 
             canvas.drawText("fps:"+fps, 50.0f, 50.0f, paint);
     		invalidate();
@@ -91,9 +81,22 @@ public class ActionDefense extends Activity {
     	
         @Override
         public boolean onTouchEvent(MotionEvent event) {
-        	tower.setFiring(true);
+        	float x = event.getX();
+        	float y = event.getY();
+        	
+        	addTower(x,y);
+        	
+        	//tower.setFiring(true);
             return true;
         }
+        
+    	private void addTower(float x, float y) {
+    		towers[numTowers] = new Tower(x, y);
+    		numTowers++;
+    		if(numTowers >= 25) {
+    			numTowers = 24;
+    		}
+    	}
     	
     	private void addBaddies() {
     		if ((System.currentTimeMillis() - lastBaddieTime) > 5000) {
@@ -115,8 +118,26 @@ public class ActionDefense extends Activity {
     		}
     	}
     	
-    	private void drawTowers(Canvas canvas, float x, float y, float radius) {
-    		canvas.drawCircle(x, y, radius, paint);
+    	private void drawTowers(Canvas canvas) {
+    		for(int i=0; i< numTowers; i++) {
+    			canvas.drawCircle(towers[i].getX(), towers[i].getY(), 20.0f, paint);
+    		}
+    	}
+    	
+    	private void fireTowers(Canvas canvas) {
+    		for(int i=0; i< numTowers; i++) {
+				if( towers[i].firing() ) {
+					canvas.drawCircle(towers[i].fireX(), towers[i].fireY(), 5.0f, paint);
+					towers[i].setFireX(towers[i].fireX()-1.0f);
+					towers[i].setFireY(towers[i].fireY()-1.0f);
+					
+					if( towers[i].fireY() <= 0 ) {
+						towers[i].setFiring(false);
+						towers[i].setFireX(towers[i].getX());
+						towers[i].setFireY(towers[i].getY());
+					}
+				}
+    		}
     	}
     	
     	private void fps() {
