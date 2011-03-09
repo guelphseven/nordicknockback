@@ -7,14 +7,29 @@ public class Tower {
 	private boolean _fire = false;
 	private Baddie _baddieTarget;
 	int _row;
+	long _fireInterval;
+	long _lastFireTime = 0;
 	
-	public Tower( float startX, float startY, float fireRadius, int towerRow ) {
+	public Tower( float startX, float startY, float fireRadius, int towerRow, long fireInterval ) {
 		_x = startX;
 		_y = startY;
 		_fireX = _x;
 		_fireY = _y;
 		_fireRadius = fireRadius;
 		_row = towerRow;
+		_fireInterval = fireInterval;
+	}
+	
+	public long lastFireTime() {
+		return _lastFireTime;
+	}
+	
+	public void setLastFireTime(long time) {
+		_lastFireTime = time;
+	}
+	
+	public long getFireInterval() {
+		return _fireInterval;
 	}
 	
 	public int getRow() {

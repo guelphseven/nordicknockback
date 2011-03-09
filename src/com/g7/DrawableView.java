@@ -19,7 +19,7 @@ class DrawableView extends View {
         Paint paint;
         Rect widthHeight, iconWH;
         
-        int fps =0, frameCount = 0, gold = 0;
+        int fps =0, frameCount = 0, gold = 2;
         long lastFrameTime = 0, lastBaddieTime = 0, lastTouchTime = 0;
         
         int numTowers = 0;
@@ -54,21 +54,26 @@ class DrawableView extends View {
     	protected void onDraw(Canvas canvas){
     		//canvas.scale(0.5f, 0.5f, 0.5f, 0.5f);
     		canvas.drawBitmap(backgroundImg, widthHeight, widthHeight, null);	
-
-    		addBaddies();
-        	drawBaddies(canvas, baddies1);
-    		drawBaddies(canvas, baddies2);
-    		drawBaddies(canvas, baddies3);
+        	canvas.drawLines(points, paint);
+        	drawTowers(canvas);
+        	
+            if( gold > 0 ) {
+            	addBaddies();
     		
-    		canvas.drawLines(points, paint);
+            	drawBaddies(canvas, baddies1);
+            	drawBaddies(canvas, baddies2);
+            	drawBaddies(canvas, baddies3);
     		
-    		drawTowers(canvas);
-    		
-    		buildFireList();
-    		fireTowers(canvas);
-
-            canvas.drawText("fps:"+fps, 25.0f, 25.0f, paint);
-            canvas.drawText("gold:"+gold, 75.0f, 25.0f, paint);
+            	buildFireList();
+            	fireTowers(canvas);
+            	
+            	canvas.drawText("fps: "+fps, 25.0f, 25.0f, paint);
+            	canvas.drawText("gold: "+gold, 75.0f, 25.0f, paint);
+            } else {
+            	canvas.drawText("fps: "+fps, 25.0f, 25.0f, paint);
+            	canvas.drawText("gold:"+gold, 75.0f, 25.0f, paint);
+            	canvas.drawText("YOU LOSE!", 150.0f, 100.0f, paint);
+            }
     		invalidate();
     		fps();
     	}
@@ -81,11 +86,11 @@ class DrawableView extends View {
     			float y = event.getY();
         	
     			if( y < 200.0f ) {
-    				addTower(x,190.0f,100.0f,1);
+    				addTower(x,180.0f,150.0f,1, 750);
     			} else if( y <= 250.0f) {
-    				addTower(x,240.0f,100.0f,2);
+    				addTower(x,230.0f,150.0f,2, 750);
     			} else {
-    				addTower(x,290.0f,100.0f,3);
+    				addTower(x,280.0f,150.0f,3, 750);
     			}
     			lastTouchTime = System.currentTimeMillis();
     			
@@ -95,16 +100,19 @@ class DrawableView extends View {
     		}
         }
         
-    	private void addTower(float x, float y, float fireRadius, int row) {
-    		towers[numTowers] = new Tower(x, y, fireRadius, row);
-    		numTowers++;
-    		if(numTowers >= 25) {
-    			numTowers = 24;
+    	private void addTower(float x, float y, float fireRadius, int row, long fireInterval) {
+    		if( gold > 0 ) {
+	    		towers[numTowers] = new Tower(x, y, fireRadius, row, fireInterval);
+	    		numTowers++;
+	    		if(numTowers >= 25) {
+	    			numTowers = 24;
+	    		}
+	    		gold--;
     		}
     	}
     	
     	private void addBaddies() {
-    		if ((System.currentTimeMillis() - lastBaddieTime) > 5000) {
+    		if ((System.currentTimeMillis() - lastBaddieTime) > (5000/gold) ) {
     			float rand = random.nextFloat();
 
             	float y = 0.0f;
@@ -136,6 +144,12 @@ class DrawableView extends View {
 	    				gold -= 1;
 	    				baddies.remove(baddie);
 	    			}
+	    			
+	    			if( baddie.getHealth() <= 0) {
+	    				baddie.setDead(true);
+	    				baddies.remove(baddie);
+	    				gold++;
+	    			}
     			}
     		}
     	}
@@ -149,11 +163,14 @@ class DrawableView extends View {
     	private void fireAtBaddies(int i, Vector<Baddie> baddies) {
 			for( int j = 0; j < baddies.size(); j++ ) {
 				if( !towers[i].firing() ) {
-					if( checkCollision(towers[i], baddies.get(j)) ) {
-						towers[i].setBaddie(baddies.get(j));
-						//towers[i].setBaddie(j);
-						towers[i].setFiring(true);
-						break;
+					if((System.currentTimeMillis() - towers[i].lastFireTime()) > towers[i].getFireInterval() ) {
+						if( checkCollision(towers[i], baddies.get(j)) ) {
+							towers[i].setBaddie(baddies.get(j));
+							//towers[i].setBaddie(j);
+							towers[i].setFiring(true);
+							towers[i].setLastFireTime(System.currentTimeMillis());
+							break;
+						}
 					}
 				}
 			}
@@ -190,11 +207,7 @@ class DrawableView extends View {
     		float radii = 10.0f + 5.0f;
     		
     		if( (distX * distX) + (distY * distY) < (radii * radii) ) {
-    			tower.getBaddie().setHealth(tower.getBaddie().getHealth());
-    			if( tower.getBaddie().getHealth() <= 0) {
-    				tower.getBaddie().setDead(true);
-    				gold++;
-    			}
+    			tower.getBaddie().setHealth(tower.getBaddie().getHealth() - 1);
     			return true;
     		}
     			
@@ -203,7 +216,7 @@ class DrawableView extends View {
     	
     	private void fireTowers(Canvas canvas) {
     		for(int i=0; i< numTowers; i++) {
-				if( towers[i].firing() ) {
+				if( towers[i].firing()  ) {
 					towers[i].setTarget(towers[i].getBaddie().getX(),towers[i].getBaddie().getY());
 					
 					towers[i].setFireX(towers[i].fireX() + towers[i].getTargetX());
