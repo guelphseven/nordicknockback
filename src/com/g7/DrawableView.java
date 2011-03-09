@@ -22,7 +22,7 @@ class DrawableView extends View {
         int fps =0, frameCount = 0, gold = 2;
         long lastFrameTime = 0, lastBaddieTime = 0, lastTouchTime = 0;
         
-        int numTowers = 0;
+        int numTowers = 0, numBaddies = 1;//avoid divide by 0, monsters freq. incr. by divide
         
         Vector<Baddie> baddies1 = new Vector<Baddie>();
         Vector<Baddie> baddies2 = new Vector<Baddie>();
@@ -30,12 +30,38 @@ class DrawableView extends View {
         
         Tower[] towers = new Tower[25];
         
+        int kegs = 3;
+    	boolean keg1Picked, keg2Picked, keg3Picked;
+    	float[] keg1 = { 240.0f, 150.0f };
+    	float[] keg2 = { 240.0f, 225.0f };
+    	float[] keg3 = { 240.0f, 300.0f };
+    	
         Random random;
         
-        float[] points = {
-        		0.0f, 200.0f, 500.0f, 200.0f,
-        		0.0f, 250.0f, 500.0f, 250.0f,
+        float[] linesHorizontal = {
+        		0.0f, 150.0f, 500.0f, 150.0f,
+        		0.0f, 225.0f, 500.0f, 225.0f,
         		0.0f, 300.0f, 500.0f, 300.0f,
+        };
+        
+        float[] linesVertical = {
+        		230.0f, 320.0f, 230.0f, 150.0f,
+        		250.0f, 320.0f, 250.0f, 150.0f
+        };
+        
+        float[] towerSpots1 = {
+        		175.0f, 150.0f, 225.0f, 150.0f,
+        		255.0f, 150.0f, 305.0f, 150.0f,
+        };
+        
+        float[] towerSpots2 = {
+        		175.0f, 225.0f, 225.0f, 225.0f,
+        		255.0f, 225.0f, 305.0f, 225.0f,
+        };
+        
+        float[] towerSpots3 = {
+        		175.0f, 300.0f, 225.0f, 300.0f,
+        		255.0f, 300.0f, 305.0f, 300.0f,
         };
         
     	public DrawableView(Context context) {
@@ -52,23 +78,42 @@ class DrawableView extends View {
     	}
 
     	protected void onDraw(Canvas canvas){
-    		//canvas.scale(0.5f, 0.5f, 0.5f, 0.5f);
     		canvas.drawBitmap(backgroundImg, widthHeight, widthHeight, null);	
-        	canvas.drawLines(points, paint);
-        	drawTowers(canvas);
+        	canvas.drawLines(linesHorizontal, paint);
+        	canvas.drawLines(linesVertical, paint);
         	
-            if( gold > 0 ) {
+        	if( kegs > 0 ) {
+	        	
+	        	//Tower spots
+	        	paint.setColor(Color.GREEN);
+	        	canvas.drawLines(towerSpots1, paint);
+	        	canvas.drawLines(towerSpots2, paint);
+	        	canvas.drawLines(towerSpots3, paint);
+	        	paint.setColor(Color.WHITE);
+	        	
+	        	drawTowers(canvas);
+            
+	        	//Add and draw the three rows of baddies
             	addBaddies();
+            	drawBaddies(canvas, baddies1, 1);
+            	drawBaddies(canvas, baddies2, 2);
+            	drawBaddies(canvas, baddies3, 3);
+
+        		//Kegs
+	        	paint.setColor(Color.RED);
+				canvas.drawCircle(keg1[0], keg1[1], 7.5f, paint);
+				canvas.drawCircle(keg2[0], keg2[1], 7.5f, paint);
+				canvas.drawCircle(keg3[0], keg3[1], 7.5f, paint);
+	        	paint.setColor(Color.WHITE);
     		
-            	drawBaddies(canvas, baddies1);
-            	drawBaddies(canvas, baddies2);
-            	drawBaddies(canvas, baddies3);
-    		
+	        	//Set towers to fire and begin animating
             	buildFireList();
             	fireTowers(canvas);
             	
             	canvas.drawText("fps: "+fps, 25.0f, 25.0f, paint);
             	canvas.drawText("gold: "+gold, 75.0f, 25.0f, paint);
+            	canvas.drawText("gold: "+gold, 75.0f, 25.0f, paint);
+            	displayKegStatus(canvas);
             } else {
             	canvas.drawText("fps: "+fps, 25.0f, 25.0f, paint);
             	canvas.drawText("gold:"+gold, 75.0f, 25.0f, paint);
@@ -78,19 +123,33 @@ class DrawableView extends View {
     		fps();
     	}
     	
+    	private void displayKegStatus(Canvas canvas) {
+    		for(int i = 0; i < kegs; i++ ) {
+    			canvas.drawText("keg", 200.0f + (i*25.0f), 25.0f, paint);
+    		}
+    	}
+    	
+    	private void checkPlacement(float[] towerSpots, float x, float y, int row ) {
+    		for( int i=0; i < towerSpots.length - 2; i+=2 ) {
+    			if( x >= towerSpots[i] && x <= towerSpots[i+2] ) {
+    				addTower((towerSpots[i]+towerSpots[i+2])/2, y, 150.0f, row, 750);
+    			}
+    		}
+    	}
+    	
         @Override
         public boolean onTouchEvent(MotionEvent event) {
         	
-    		if ((System.currentTimeMillis() - lastTouchTime) > 1000) {
+    		if ((System.currentTimeMillis() - lastTouchTime) > 500) {
     			float x = event.getX();
     			float y = event.getY();
-        	
-    			if( y < 200.0f ) {
-    				addTower(x,180.0f,150.0f,1, 750);
-    			} else if( y <= 250.0f) {
-    				addTower(x,230.0f,150.0f,2, 750);
-    			} else {
-    				addTower(x,280.0f,150.0f,3, 750);
+    			
+    			if( y <= 150.0f ) {
+    				checkPlacement( towerSpots1, x, 125.0f, 1);
+    			} else if( y <= 225.0f ) {
+    				checkPlacement( towerSpots2, x, 200.0f, 2);
+    			} else if( y <= 300.0f ) {
+    				checkPlacement( towerSpots3, x, 275.0f, 3);
     			}
     			lastTouchTime = System.currentTimeMillis();
     			
@@ -112,46 +171,105 @@ class DrawableView extends View {
     	}
     	
     	private void addBaddies() {
-    		if ((System.currentTimeMillis() - lastBaddieTime) > (5000/gold) ) {
+    		if ((System.currentTimeMillis() - lastBaddieTime) > (2500 - (numBaddies*10) ) ) {
     			float rand = random.nextFloat();
 
             	float y = 0.0f;
         		if( rand <= 0.3f) {
-        			y = 200.0f;
-                	baddies1.add( new Baddie( 0.0f, y, 1.0f ));
+        			y = 150.0f;
+                	baddies1.add( new Baddie( 0.0f, y, 1.5f ));
         		} else if( rand <= 0.6f ) {
-        			y = 250.0f;
-                	baddies2.add( new Baddie( 480.0f, y, -1.5f));
+        			y = 225.0f;
+                	baddies2.add( new Baddie( 480.0f, y, -2.0f));
         		} else if( rand <= 0.9f ) {
         			y = 300.0f;
-                	baddies3.add( new Baddie( 480.0f, y, -1.0f ) );
+                	baddies3.add( new Baddie( 480.0f, y, -1.5f ) );
         		} else {
         			y = 300.0f;
-                	baddies3.add( new Baddie( 0.0f, y, 1.5f ));
+                	baddies3.add( new Baddie( 0.0f, y, 2.0f ));
         		}
+        		
+        		numBaddies++;
                 lastBaddieTime = System.currentTimeMillis();
     		}
     	}
     	
-    	private void drawBaddies(Canvas canvas, Vector<Baddie> baddies) {
+    	private void drawBaddies(Canvas canvas, Vector<Baddie> baddies, int row) {
     		for(int i=0; i < baddies.size(); i++ ) {
     			Baddie baddie = baddies.get(i);
     			if( !baddie.isDead() ) {
 	    			//canvas.drawBitmap(icon, baddie.getX(), baddie.getY(), null);
 	    			canvas.drawCircle(baddie.getX(), baddie.getY(), 10.0f, paint);
 	    			baddie.setX( baddie.getX() + baddie.getSpeed() );
+	    			
+    				if( baddie.hasKeg() > 0 ) {
+    					moveKeg(baddie);
+    				}
+    				
 	    			if( baddie.getX() > 480.0f || baddie.getX() < 0.0f ) {
 	    				gold -= 1;
+	    				if( baddie.hasKeg() > 0 ) {
+	    					kegs--;
+	    				}
 	    				baddies.remove(baddie);
 	    			}
 	    			
 	    			if( baddie.getHealth() <= 0) {
 	    				baddie.setDead(true);
+	    				if( baddie.hasKeg() > 0 ) {
+	    					dropKeg(baddie);
+	    				}
 	    				baddies.remove(baddie);
 	    				gold++;
 	    			}
+	    			
+	    			if( baddie.getX() >= 230.0f && baddie.getX() <= 250.0f ) {
+	    				pickupKeg(row, baddie);
+	    			}
     			}
     		}
+    	}
+    	
+    	private void moveKeg(Baddie baddie) {
+    		if( baddie.hasKeg() == 1 ) {
+    			keg1[0] = baddie.getX();
+    		}
+			if( baddie.hasKeg() == 2 ) {
+    			keg2[0] = baddie.getX();
+			}
+			if( baddie.hasKeg() == 3 ) {
+    			keg3[0] = baddie.getX();
+			}
+    	}
+    	
+    	private void dropKeg(Baddie baddie) {
+    		if( baddie.hasKeg() == 1 ) {
+    			keg1[0] = baddie.getX();
+    			keg1Picked = false;
+    		}
+			if( baddie.hasKeg() == 2 ) {
+    			keg2[0] = baddie.getX();
+				keg2Picked = false;
+			}
+			if( baddie.hasKeg() == 3 ) {
+    			keg3[0] = baddie.getX();
+				keg3Picked = false;
+			}
+    	}
+    	
+    	private void pickupKeg(int row, Baddie baddie) {
+			if( row == 1 && !keg1Picked ) {
+				baddie.pickupKeg(row);
+				keg1Picked = true;
+			}
+			if( row == 2 && !keg2Picked ) {
+				baddie.pickupKeg(row);
+				keg2Picked = true;
+			}
+			if( row == 3 && !keg3Picked ) {
+				baddie.pickupKeg(row);
+				keg3Picked = true;
+			}
     	}
     	
     	private void drawTowers(Canvas canvas) {

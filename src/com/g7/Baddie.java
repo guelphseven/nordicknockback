@@ -16,6 +16,7 @@ public class Baddie {
     private int mSpriteWidth;
     private boolean _dead = false;
     private int _health = 3;
+    private int _keg = 0;
 	
 	public Baddie( float x, float y, float speed ) {
 		_x = x;
@@ -36,6 +37,14 @@ public class Baddie {
         mSRectangle.right = mSpriteWidth;
         mFPS = 1000 /theFPS;
         mNoOfFrames = theFrameCount;
+    }
+    
+    public int hasKeg() {
+    	return _keg;
+    }
+    
+    public void pickupKeg(int row) {
+    	_keg = row;
     }
     
     public void setHealth( int health ) {
