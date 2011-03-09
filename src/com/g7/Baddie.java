@@ -3,7 +3,7 @@ package com.g7;
 import android.graphics.*;
 
 public class Baddie {
-	private float _x, _y;
+	private float _x, _y, _speed;
     private Bitmap mAnimation;
     private int mXPos;
     private int mYPos;
@@ -14,10 +14,13 @@ public class Baddie {
     private long mFrameTimer;
     private int mSpriteHeight;
     private int mSpriteWidth;
+    private boolean _dead = false;
+    private int _health = 3;
 	
-	public Baddie( float startX, float startY ) {
-		_x = startX;
-		_y = startY;
+	public Baddie( float x, float y, float speed ) {
+		_x = x;
+		_y = y;
+        _speed = speed;
         mSRectangle = new Rect(0,0,0,0);
         mFrameTimer = 0;
         mCurrentFrame = 0;
@@ -34,6 +37,22 @@ public class Baddie {
         mFPS = 1000 /theFPS;
         mNoOfFrames = theFrameCount;
     }
+    
+    public void setHealth( int health ) {
+    	_health = health;
+    }
+    
+    public int getHealth() {
+    	return _health;
+    }
+    
+    public void setDead( boolean dead ) {
+    	_dead = dead;
+    }
+    
+    public boolean isDead() {
+    	return _dead;
+    }
 	
 	public void setX( float x ) {
 		_x = x;
@@ -49,6 +68,10 @@ public class Baddie {
 	
 	public float getY() {
 		return _y;
+	}
+	
+	public float getSpeed() {
+		return _speed;
 	}
 
     public void Update(long GameTime) {

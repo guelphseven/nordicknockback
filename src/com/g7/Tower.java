@@ -1,22 +1,47 @@
 package com.g7;
 
+import java.math.*;
+
 public class Tower {
-	private float _x, _y, _fireX, _fireY, _fireRadius;
+	private float _x, _y, _y0, _x0, _targetX, _targetY, _fireX, _fireY, _fireRadius;
 	private boolean _fire = false;
 	private Baddie _baddieTarget;
+	int _row;
 	
-	public Tower( float startX, float startY, float fireRadius ) {
+	public Tower( float startX, float startY, float fireRadius, int towerRow ) {
 		_x = startX;
 		_y = startY;
+		_fireX = _x;
+		_fireY = _y;
 		_fireRadius = fireRadius;
+		_row = towerRow;
 	}
 	
-	public void setTarget(Baddie baddie) {
-		_baddieTarget = baddie;
+	public int getRow() {
+		return _row;
 	}
 	
-	public Baddie getTarget() {
+	public void setBaddie( Baddie target ) {
+		_baddieTarget = target;
+	}
+	
+	public Baddie getBaddie() {
 		return _baddieTarget;
+	}
+	
+	public void setTarget(float x, float y) {
+		float angle = (float)(Math.atan2(_fireY - y, _fireX - x));
+				
+		_targetX = -(float)Math.cos(angle) * 3.0f;
+		_targetY = -(float)Math.sin(angle) * 3.0f;
+	}
+	
+	public float getTargetX() {
+		return _targetX;
+	}
+	
+	public float getTargetY() {
+		return _targetY;
 	}
 	
 	public void setFiring(boolean firing) {
