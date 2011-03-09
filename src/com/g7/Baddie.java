@@ -16,7 +16,8 @@ public class Baddie {
     private int mSpriteWidth;
     private boolean _dead = false;
     private int _health = 3;
-    private int _keg = 0;
+    private boolean _hasKeg = false;
+    private Keg _keg;
 	
 	public Baddie( float x, float y, float speed ) {
 		_x = x;
@@ -39,12 +40,17 @@ public class Baddie {
         mNoOfFrames = theFrameCount;
     }
     
-    public int hasKeg() {
+    public boolean hasKeg() {
+    	return _hasKeg;
+    }
+    
+    public Keg getKeg() {
     	return _keg;
     }
     
-    public void pickupKeg(int row) {
-    	_keg = row;
+    public void pickupKeg(Keg keg) {
+    	_keg = keg;
+    	_hasKeg = true;
     }
     
     public void setHealth( int health ) {

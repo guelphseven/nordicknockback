@@ -15,4 +15,6 @@
         </activity>
 
     </application>
+    
+<uses-permission android:name="android.permission.WAKE_LOCK"></uses-permission>
 </manifest>
