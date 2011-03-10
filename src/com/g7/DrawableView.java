@@ -11,12 +11,14 @@ import android.graphics.drawable.*;
 import android.content.Context;
 import java.math.*;
 import java.util.*;
+import android.graphics.Matrix;
 
 class DrawableView extends View implements BlowListener, ShakeListener {
     	Context mContext;
         Bitmap backgroundImg;
         Bitmap icon;
         Paint paint;
+       // Paint bmpPaint;
         Rect widthHeight, iconWH;
         
         boolean addTower;
@@ -36,23 +38,46 @@ class DrawableView extends View implements BlowListener, ShakeListener {
         Vector<Powerup> powerups = new Vector<Powerup>();
         //Powerup powerup;
         Random random;
-        Bitmap sprite;
+        Bitmap viking, rock, keg, tower;
         
         BlowDetect blowDetector;
         Shake shakeDetector;
         
-    	public DrawableView(Context context) {
+        private float _width, _height;
+        private float _scaleX, _scaleY;
+        
+        private final static float BASE_HEIGHT = 320.0f;
+        private final static float BASE_WIDTH = 480.0f;
+        
+    	public DrawableView(Context context, float width, float height) {
     		super(context);
     		mContext = context;
             backgroundImg = BitmapFactory.decodeResource(getResources(), R.drawable.castle_sunset);
             icon = BitmapFactory.decodeResource(getResources(), R.drawable.icon);
-            sprite = BitmapFactory.decodeResource(getResources(), R.drawable.sprite_viking);
+            viking = BitmapFactory.decodeResource(getResources(), R.drawable.sprite_viking);
+            rock = BitmapFactory.decodeResource(getResources(), R.drawable.stone);
+            keg = BitmapFactory.decodeResource(getResources(), R.drawable.barrel);
+            tower = BitmapFactory.decodeResource(getResources(), R.drawable.tower);
             
             paint = new Paint();
             paint.setColor(Color.WHITE);
             paint.setStrokeWidth(5.0f);
             paint.setTextSize(10.0f);
             
+          /*  bmpPaint = new Paint();
+            bmpPaint.setFilterBitmap(false);
+            Matrix matrix = new Matrix();
+            matrix.setScale(5.0f, 5.0f);
+            Shader shader = new Shader();
+            shader.setLocalMatrix(matrix);
+            bmpPaint.setShader(shader);*/
+            
+            _width = width;
+            _height = height;
+            
+            _scaleX = _width/BASE_WIDTH;
+            _scaleY = _height/BASE_HEIGHT;
+
             widthHeight = new Rect(0,0,backgroundImg.getWidth(),backgroundImg.getHeight());
             random = new Random(System.currentTimeMillis());
             
@@ -62,7 +87,7 @@ class DrawableView extends View implements BlowListener, ShakeListener {
 
             blowDetector = new BlowDetect(this);
             shakeDetector = Shake.getShake(context, this);
-            shakeDetector.setThreshold(800);
+            shakeDetector.setThreshold(1000);
     	}
     	
         int towers1PlacedLeft, towers2PlacedLeft, towers3PlacedLeft,
@@ -71,7 +96,8 @@ class DrawableView extends View implements BlowListener, ShakeListener {
         int blowPrntCtr = 0, shakePrntCtr = 0, lvlPrtCtr = 0;
 
     	protected void onDraw(Canvas canvas) {
-    		canvas.drawBitmap(backgroundImg, widthHeight, widthHeight, null);	
+    		canvas.scale(_scaleX, _scaleY);
+    		canvas.drawBitmap(backgroundImg, widthHeight, widthHeight, null);
     		if( addTower ) {
     			paint.setColor(Color.GREEN);
     		}
@@ -101,7 +127,11 @@ class DrawableView extends View implements BlowListener, ShakeListener {
 	        	paint.setColor(Color.RED);
 	        	for(int i=0; i < kegs.size(); i++ ) {
 	        		if( !kegs.get(i).removed() ) {
-	        			canvas.drawCircle(kegs.get(i).getX(), kegs.get(i).getY(), 7.5f, paint);
+	        			if(kegs.get(i).pickedUp()) {
+	        				canvas.drawBitmap(keg, kegs.get(i).getX(), kegs.get(i).getY()-15.0f, null);
+	        			} else {
+	        				canvas.drawBitmap(keg, kegs.get(i).getX(), kegs.get(i).getY(), null);
+	        			}
 	        		}
 	        	}
 	        	paint.setColor(Color.WHITE);
@@ -263,7 +293,11 @@ class DrawableView extends View implements BlowListener, ShakeListener {
     	
     	private void addBaddies(int level) {
     		if( numBaddies < (level) * 10) {
-	    		if ((System.currentTimeMillis() - lastBaddieTime) > (3000 - (numBaddies*10) ) ) {
+    			int intervalReduce = numBaddies*10;
+    			if( intervalReduce > 1500 )
+    				intervalReduce = 1500;
+    			
+	    		if ((System.currentTimeMillis() - lastBaddieTime) > ((3000) - intervalReduce ) ) {
 	            	float y = 0.0f;
 	    			float x = 0.0f;
 	    			
@@ -274,21 +308,21 @@ class DrawableView extends View implements BlowListener, ShakeListener {
 	        		if( rand <= 0.3f ) {
 	        			if(!kegs.get(0).pickedUp()) {
 	        				y = 125.0f;
-	        				baddies1.add( new Baddie( sprite, (direction1 == -1) ? 480.0f:x, y, (BASE_SPEED+lvlSpeed) * direction1 ));
+	        				baddies1.add( new Baddie( viking, (direction1 == -1) ? 480.0f:x, y, (level*2), (BASE_SPEED+lvlSpeed) * direction1 ));
 	        				added = true;
 	        			}
 	        		}
 	        		if( rand <= 0.6f && !added  ) {
 	        			if(!kegs.get(1).pickedUp()) {
 	        				y = 200.0f;
-	        				baddies2.add( new Baddie( sprite, (direction2 == -1) ? 480.0f:x, y, (BASE_SPEED+lvlSpeed) * direction2));
+	        				baddies2.add( new Baddie( viking, (direction2 == -1) ? 480.0f:x, y, (level*2), (BASE_SPEED+lvlSpeed) * direction2));
 	        				added = true;
 	        			}
 	        		} 
 	        		if( rand <= 0.9f && !added ) {
 	        			if(!kegs.get(2).pickedUp()) {
 	        				y = 275.0f;
-	        				baddies3.add( new Baddie( sprite, (direction3 == -1) ? 480.0f:x, y, (BASE_SPEED+lvlSpeed) * direction3 ) );
+	        				baddies3.add( new Baddie( viking, (direction3 == -1) ? 480.0f:x, y, (level*2), (BASE_SPEED+lvlSpeed) * direction3 ) );
 	        				added = true;
 	        			}
 	        		}
@@ -308,15 +342,15 @@ class DrawableView extends View implements BlowListener, ShakeListener {
     			for(int i=0; i<kegs.size(); i++) {
     				if( !kegs.get(i).pickedUp() && i == 0 ) {
         				y = 125.0f;
-        				baddies1.add( new Baddie( sprite, (direction1 == -1) ? 480.0f:x, y, (BASE_SPEED+lvlSpeed) * direction1 ) );
+        				baddies1.add( new Baddie( viking, (direction1 == -1) ? 480.0f:x, y, (level+1), (BASE_SPEED+lvlSpeed) * direction1 ) );
         				break;
     				} else if( !kegs.get(i).pickedUp() && i == 1 ) {
         				y = 200.0f;
-        				baddies2.add( new Baddie( sprite, (direction2 == -1) ? 480.0f:x, y, (BASE_SPEED+lvlSpeed) * direction2 ) );
+        				baddies2.add( new Baddie( viking, (direction2 == -1) ? 480.0f:x, y, (level+1), (BASE_SPEED+lvlSpeed) * direction2 ) );
         				break;
     				} else if( !kegs.get(i).pickedUp() && i == 2 ) {
         				y = 275.0f;
-        				baddies3.add( new Baddie( sprite, (direction3 == -1) ? 480.0f:x, y, (BASE_SPEED+lvlSpeed) * direction3 ) );
+        				baddies3.add( new Baddie( viking, (direction3 == -1) ? 480.0f:x, y, (level+1), (BASE_SPEED+lvlSpeed) * direction3 ) );
         				break;
     				}
     			}
@@ -327,7 +361,7 @@ class DrawableView extends View implements BlowListener, ShakeListener {
     		for(int i=0; i < baddies.size(); i++ ) {
     			Baddie baddie = baddies.get(i);
     			if( !baddie.isDead() ) {
-    				baddie.draw(canvas);
+    				baddie.draw(canvas,null);
     				baddie.Update(System.currentTimeMillis());
 	    			baddie.setX( baddie.getX() + baddie.getSpeed() );
 	    			
@@ -400,7 +434,8 @@ class DrawableView extends View implements BlowListener, ShakeListener {
     	
     	private void drawTowers(Canvas canvas) {
     		for(int i=0; i< numTowers; i++) {
-    			canvas.drawCircle(towers[i].getX(), towers[i].getY(), 20.0f, paint);
+    			//canvas.drawCircle(towers[i].getX(), towers[i].getY(), 20.0f, paint);
+    			canvas.drawBitmap(tower,towers[i].getX(), towers[i].getY()-25.0f, null);
     		}
     	}
     	
@@ -474,7 +509,8 @@ class DrawableView extends View implements BlowListener, ShakeListener {
 					towers[i].setFireX(towers[i].fireX() + towers[i].getTargetX());
 					towers[i].setFireY(towers[i].fireY() + towers[i].getTargetY());
 					
-					canvas.drawCircle(towers[i].fireX(), towers[i].fireY(), 5.0f, paint);
+					//canvas.drawCircle( 5.0f, paint);
+					canvas.drawBitmap(rock, towers[i].fireX(), towers[i].fireY(), null );
 					
 					if( towers[i].fireY() <= 0 || towers[i].fireY() >= 600 || 
 						towers[i].fireX() <= 0 || towers[i].fireX() >= 800 || checkCollision(towers[i]) ) {

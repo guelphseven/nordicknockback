@@ -11,9 +11,12 @@ public final class R {
     public static final class attr {
     }
     public static final class drawable {
-        public static final int castle_sunset=0x7f020000;
-        public static final int icon=0x7f020001;
-        public static final int sprite_viking=0x7f020002;
+        public static final int barrel=0x7f020000;
+        public static final int castle_sunset=0x7f020001;
+        public static final int icon=0x7f020002;
+        public static final int sprite_viking=0x7f020003;
+        public static final int stone=0x7f020004;
+        public static final int tower=0x7f020005;
     }
     public static final class layout {
         public static final int main=0x7f030000;

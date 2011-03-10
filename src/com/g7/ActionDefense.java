@@ -25,9 +25,11 @@ public class ActionDefense extends Activity {
         
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN );
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON, WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         setRequestedOrientation( ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE );
-
-        setContentView(new DrawableView(this));
+        
+        Display display = getWindowManager().getDefaultDisplay(); 
+        setContentView(new DrawableView(this, display.getWidth(),  display.getHeight()));
     }
     
 }

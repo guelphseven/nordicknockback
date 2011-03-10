@@ -20,10 +20,11 @@ public class Baddie {
     private Keg _keg;
     Rect destRect;
 	
-	public Baddie( Bitmap bitmap, float x, float y, float speed ) {
+	public Baddie( Bitmap bitmap, float x, float y, int health, float speed ) {
 		_x = x;
 		_y = y;
         _speed = speed;
+        _health = health;
         mSRectangle = new Rect(0,0,0,0);
         destRect = new Rect(0,0,0,0);
         mFrameTimer = 0;
@@ -119,13 +120,13 @@ public class Baddie {
         mSRectangle.right = mSRectangle.left + mSpriteWidth;
     }
 	 
-    public void draw(Canvas canvas) {
+    public void draw(Canvas canvas, Paint paint) {
     	destRect.set((int)getX(), (int)getY(), (int)getX() + mSpriteWidth, (int)getY() + mSpriteHeight);
       //  canvas.scale(2.0f, 2.0f, getX(), getY());
     	if( getSpeed() < 0 ) {
         	canvas.scale(-1,1,getX(),getY());
     	}
-        canvas.drawBitmap(mAnimation, mSRectangle, destRect, null);
+        canvas.drawBitmap(mAnimation, mSRectangle, destRect, paint);
         if( getSpeed() < 0 ) {
         	canvas.scale(-1,1,getX(),getY());
         }
