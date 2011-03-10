@@ -4,8 +4,14 @@ public class Powerup {
 	public final static int TYPE_SHAKE = 0;
 	public final static int TYPE_BLOW = 1;
 	
+	public final static int STATUS_INACTIVE = 0;
+	public final static int STATUS_DROPPED = 1;
+	public final static int STATUS_PICKED_UP = 2;
+
 	private int _type;
+	private int _status;
 	private float _x, _y;
+	
 	private boolean _active;
 	
 	public Powerup(float type, float x, float y) {
@@ -30,12 +36,12 @@ public class Powerup {
 		return _type;
 	}
 	
-	public boolean getActive() {
-		return _active;
+	public int getStatus() {
+		return _status;
 	}
 	
-	public void setActive(boolean active) {
-		_active = active;
+	public void setStatus(int status) {
+		_status = status;
 	}
 	
 	public void setX( float x ) {

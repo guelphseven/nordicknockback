@@ -12,7 +12,7 @@ import android.content.Context;
 import java.math.*;
 import java.util.*;
 
-class DrawableView extends View {
+class DrawableView extends View implements BlowListener {
     	Context mContext;
         Bitmap backgroundImg;
         Bitmap icon;
@@ -33,6 +33,7 @@ class DrawableView extends View {
         Vector<Keg> kegs = new Vector<Keg>();
         //Vector<Powerup> powerups = new Vector<Powerup>();
         Powerup powerup;
+        BlowDetect blowDetecor;
         Random random;
         
     	public DrawableView(Context context) {
@@ -50,6 +51,7 @@ class DrawableView extends View {
             kegs.add(new Keg(2, 240.0f, 225.0f));
             kegs.add(new Keg(3, 240.0f, 300.0f));
             powerup = new Powerup(0, 0.0f, 0.0f);
+            blowDetecor = new BlowDetect(this);
     	}
     	
         int towers1PlacedLeft, towers2PlacedLeft, towers3PlacedLeft,
@@ -90,7 +92,7 @@ class DrawableView extends View {
             	drawBaddies(canvas, baddies3, 3);
 
             	//Powerups
-	        	if( powerup.getActive() ) {
+	        	if( powerup.getStatus() == Powerup.STATUS_DROPPED ) {
 	        		if( powerup.getType() == Powerup.TYPE_BLOW ) {
 	        			paint.setColor(Color.CYAN);
 	        		} else {
@@ -138,7 +140,6 @@ class DrawableView extends View {
     			canvas.drawText("keg", 200.0f + (i*25.0f), 25.0f, paint);
     		}
     	}
-    	
 
     	
         @Override
@@ -153,7 +154,7 @@ class DrawableView extends View {
     				addTower = true;
     			} else if( !addTower && checkCollision( x, powerup.getX(), y, powerup.getY(), 50.0f, 10.0f) ) {
     				//powerup.fire();
-    				powerup.setActive(false);
+    				powerup.setStatus(Powerup.STATUS_PICKED_UP);
     			} else if( addTower ) {
 	    			if( y <= 150.0f ) { 
 	    				addTower( x, 125.0f, 150.0f, 1, 1750);
@@ -296,11 +297,11 @@ class DrawableView extends View {
     	
     	private void dropPowerup(Baddie baddie) {
     		float drop = random.nextFloat();
-    		if( !powerup.getActive() && drop <= 0.5f ) {
+    		if( powerup.getStatus() == Powerup.STATUS_INACTIVE  && drop <= 0.5f ) {
         		powerup.setType(random.nextFloat());
         		powerup.setX(baddie.getX());
         		powerup.setY(baddie.getY());
-        		powerup.setActive(true);
+        		powerup.setStatus(Powerup.STATUS_DROPPED);
     		//	powerups.add( new Powerup(random.nextFloat(), baddie.getX(), baddie.getY()) );
     		}
 
@@ -426,6 +427,13 @@ class DrawableView extends View {
                 frameCount = 0;
                 lastFrameTime = System.currentTimeMillis();
             }
+    	}
+    	
+    	public void onBlow() {
+    		powerup.setStatus(Powerup.STATUS_INACTIVE);
+    		baddies1.removeAllElements();
+    		baddies2.removeAllElements();
+    		baddies3.removeAllElements();
     	}
 
     }
