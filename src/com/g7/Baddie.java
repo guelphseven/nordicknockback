@@ -18,14 +18,17 @@ public class Baddie {
     private int _health = 3;
     private boolean _hasKeg = false;
     private Keg _keg;
+    Rect destRect;
 	
-	public Baddie( float x, float y, float speed ) {
+	public Baddie( Bitmap bitmap, float x, float y, float speed ) {
 		_x = x;
 		_y = y;
         _speed = speed;
         mSRectangle = new Rect(0,0,0,0);
+        destRect = new Rect(0,0,0,0);
         mFrameTimer = 0;
         mCurrentFrame = 0;
+        init( bitmap, 32, 32, 10, 5 );
 	}
 	 
     public void init(Bitmap theBitmap, int Height, int Width, int theFPS, int theFrameCount) {
@@ -92,14 +95,23 @@ public class Baddie {
 	public float getSpeed() {
 		return _speed;
 	}
+	
+	boolean rewind;
 
     public void Update(long GameTime) {
         if(GameTime > mFrameTimer + mFPS ) {
             mFrameTimer = GameTime;
-            mCurrentFrame +=1;
+            if( !rewind ) {
+            	mCurrentFrame ++;
+            } else {
+            	mCurrentFrame --;
+            }
  
-            if(mCurrentFrame >= mNoOfFrames) {
-                mCurrentFrame = 0;
+            if(mCurrentFrame >= mNoOfFrames - 1) {
+            	rewind = true;
+            }
+            if( mCurrentFrame == 1 ) {
+            	rewind = false;
             }
         }
  
@@ -108,9 +120,16 @@ public class Baddie {
     }
 	 
     public void draw(Canvas canvas) {
-        Rect dest = new Rect((int)getX(), (int)getY(), (int)getX() + mSpriteWidth, (int)getY() + mSpriteHeight);
- 
-        canvas.drawBitmap(mAnimation, mSRectangle, dest, null);
+    	destRect.set((int)getX(), (int)getY(), (int)getX() + mSpriteWidth, (int)getY() + mSpriteHeight);
+      //  canvas.scale(2.0f, 2.0f, getX(), getY());
+    	if( getSpeed() < 0 ) {
+        	canvas.scale(-1,1,getX(),getY());
+    	}
+        canvas.drawBitmap(mAnimation, mSRectangle, destRect, null);
+        if( getSpeed() < 0 ) {
+        	canvas.scale(-1,1,getX(),getY());
+        }
+       // canvas.scale(0.5f, 0.5f, getX(), getY());
     }
 
 }

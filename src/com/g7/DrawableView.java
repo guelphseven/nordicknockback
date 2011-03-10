@@ -33,9 +33,10 @@ class DrawableView extends View implements BlowListener, ShakeListener {
         Tower[] towers = new Tower[25];
         Vector<Keg> kegs = new Vector<Keg>();
         
-        //Vector<Powerup> powerups = new Vector<Powerup>();
-        Powerup powerup;
+        Vector<Powerup> powerups = new Vector<Powerup>();
+        //Powerup powerup;
         Random random;
+        Bitmap sprite;
         
         BlowDetect blowDetector;
         Shake shakeDetector;
@@ -45,25 +46,29 @@ class DrawableView extends View implements BlowListener, ShakeListener {
     		mContext = context;
             backgroundImg = BitmapFactory.decodeResource(getResources(), R.drawable.castle_sunset);
             icon = BitmapFactory.decodeResource(getResources(), R.drawable.icon);
+            sprite = BitmapFactory.decodeResource(getResources(), R.drawable.sprite_viking);
+            
             paint = new Paint();
             paint.setColor(Color.WHITE);
             paint.setStrokeWidth(5.0f);
             paint.setTextSize(10.0f);
+            
             widthHeight = new Rect(0,0,backgroundImg.getWidth(),backgroundImg.getHeight());
             random = new Random(System.currentTimeMillis());
-            kegs.add(new Keg(1, 240.0f, 150.0f));
-            kegs.add(new Keg(2, 240.0f, 225.0f));
-            kegs.add(new Keg(3, 240.0f, 300.0f));
-            powerup = new Powerup(0, 0.0f, 0.0f);
+            
+            kegs.add(new Keg(1, 240.0f, 125.0f));
+            kegs.add(new Keg(2, 240.0f, 200.0f));
+            kegs.add(new Keg(3, 240.0f, 275.0f));
+
             blowDetector = new BlowDetect(this);
             shakeDetector = Shake.getShake(context, this);
-            shakeDetector.setThreshold(900);
+            shakeDetector.setThreshold(800);
     	}
     	
         int towers1PlacedLeft, towers2PlacedLeft, towers3PlacedLeft,
         towers1PlacedRight, towers2PlacedRight, towers3PlacedRight;
         
-        int pwrUpPrtCtr = 0, lvlPrtCtr = 0;
+        int blowPrntCtr = 0, shakePrntCtr = 0, lvlPrtCtr = 0;
 
     	protected void onDraw(Canvas canvas) {
     		canvas.drawBitmap(backgroundImg, widthHeight, widthHeight, null);	
@@ -77,7 +82,7 @@ class DrawableView extends View implements BlowListener, ShakeListener {
         	if( numKegs > 0 ) {
 	        	
         		paint.setColor(Color.GREEN);
-        		canvas.drawCircle( 400.0f, 50.0f, 30.0f, paint);
+        		canvas.drawCircle( 420.0f, 25.0f, 30.0f, paint);
         		paint.setColor(Color.WHITE);
         		
 	        	drawTowers(canvas);
@@ -106,7 +111,7 @@ class DrawableView extends View implements BlowListener, ShakeListener {
             	fireTowers(canvas);
 
             	displayTextStatus(canvas, paint);
-            	displayKegStatus(canvas);
+            	displayKegStatus(canvas, paint);
  
             } else {
             	canvas.drawText("fps: "+fps, 25.0f, 25.0f, paint);
@@ -117,31 +122,50 @@ class DrawableView extends View implements BlowListener, ShakeListener {
     		fps();
     	}
     	
+    	
+        @Override
+        public boolean onTouchEvent(MotionEvent event) {
+        	
+    		if ((System.currentTimeMillis() - lastTouchTime) > 500) {
+    			float x = event.getX();
+    			float y = event.getY();
+    		
+    			if( !addTower && checkCollision(x, 420.0f, y, 30.0f, 30.0f, 30.0f) ) {
+    				addTower = true;
+    			} else if( !addTower ) {
+    				checkPickupPowerup(x,y);
+    			} else if( addTower ) {
+	    			if( y <= 150.0f ) { 
+	    				addTower( x, 125.0f, 150.0f, 1, 2000);
+	    			} else if( y <= 225.0f ) {
+	    				addTower( x, 200.0f, 150.0f, 2, 2000);
+	    			} else {
+	    				addTower( x, 275.0f, 150.0f, 3, 2000);
+	    			}
+    				addTower = false;
+    			}
+
+    			lastTouchTime = System.currentTimeMillis();
+    			
+    			return true;
+    		} else {
+    			return false;
+    		}
+        }
+    	
     	private void drawPowerups(Canvas canvas, Paint paint) {
-        	if( powerup.getStatus() == Powerup.STATUS_DROPPED ) {
-        		if( powerup.getType() == Powerup.TYPE_BLOW ) {
-        			paint.setColor(Color.CYAN);
-        		} else {
-        			paint.setColor(Color.DKGRAY);
-        		}
-        		canvas.drawCircle(powerup.getX(), powerup.getY(), 7.5f, paint);
-	        	paint.setColor(Color.WHITE);
-        	}
+    		for( int i = 0; i < powerups.size(); i++ ) {
+    			if( powerups.get(i).getStatus() == Powerup.STATUS_DROPPED ) {
+    				paint.setColor(powerups.get(i).getColor());
+    				canvas.drawCircle(powerups.get(i).getX(), powerups.get(i).getY(), 7.5f, paint);
+    				paint.setColor(Color.WHITE);
+    			}
+    		}
     	}
     	
     	private void drawPowerupsStatus(Canvas canvas, Paint paint ) {
-    		int pNum = 0;
-    		if( powerup.getStatus() == Powerup.STATUS_PICKED_UP ) {
-    			pNum = 1;
-    			if( powerup.getType() == Powerup.TYPE_BLOW ) {
-        			canvas.drawText(" x " + pNum, 32.0f, 75.0f, paint );
-    			} else {
-    				canvas.drawText(" x " + pNum, 32.0f, 50.0f, paint );
-    			}
-    		} else {
-    			canvas.drawText(" x " + pNum, 32.0f, 75.0f, paint );
-				canvas.drawText(" x " + pNum, 32.0f, 50.0f, paint );
-    		}
+    		canvas.drawText(" x " + numBlows, 32.0f, 75.0f, paint );
+			canvas.drawText(" x " + numShakes, 32.0f, 50.0f, paint );
 			
     		paint.setColor(Color.DKGRAY);
 			canvas.drawCircle( 25.0f, 50.0f, 7.5f, paint);
@@ -151,10 +175,13 @@ class DrawableView extends View implements BlowListener, ShakeListener {
 			paint.setColor(Color.WHITE);
     	}
     	
-    	private void displayKegStatus(Canvas canvas) {
+    	private void displayKegStatus(Canvas canvas, Paint paint) {
+    		paint.setColor(Color.BLACK);
     		for(int i = 0; i < numKegs; i++ ) {
     			canvas.drawText("keg", 200.0f + (i*25.0f), 25.0f, paint);
     		}
+	    	canvas.drawText("baddies:"+numBaddies, 300.0f, 25.0f, paint);
+    		paint.setColor(Color.WHITE);
     	}
     	
     	private void displayTextStatus(Canvas canvas, Paint paint) {
@@ -167,60 +194,41 @@ class DrawableView extends View implements BlowListener, ShakeListener {
 	    	if( gold < 5 && addTower ) {
 	    		canvas.drawText("Not enough gold!", 175.0f, 150.0f, paint);
 	    	}
-	    	if( powerup.getStatus() == Powerup.STATUS_PICKED_UP ) {
-	    		paint.setTextSize(25.0f);
-	    		if( pwrUpPrtCtr < 120 ) {
-	    			if( powerup.getType() == Powerup.TYPE_BLOW ) {
-	    				canvas.drawText("BLOW INTO THE MIC!", 130.0f, 200.0f, paint);
-	    			} else {
-	    				canvas.drawText("SHAKE THE PHONE!", 140.0f, 200.0f, paint);
-	    			}
-	    			pwrUpPrtCtr++;
-	    		}
+			if( blowPrntCtr < 120 && numBlows > 0 ) {
+    			paint.setTextSize(25.0f);
+				canvas.drawText("BLOW INTO THE MIC!", 130.0f, 150.0f, paint);
+				blowPrntCtr++;
 	    		paint.setTextSize(10.0f);
-	    	}
+			} else if( shakePrntCtr < 120 && numShakes > 0 ) {
+    			paint.setTextSize(25.0f);
+				canvas.drawText("SHAKE THE PHONE!", 140.0f, 200.0f, paint);
+				shakePrntCtr++;
+   	    		paint.setTextSize(10.0f);
+			}
 	    	if( lvlPrtCtr < 120 ) {
 	    		paint.setTextSize(25.0f);
-	    		canvas.drawText("LEVEL"+level, 140.0f, 140.0f, paint);
+	    		canvas.drawText("LEVEL "+level, 200.0f, 125.0f, paint);
 	    		lvlPrtCtr++;
 	    		paint.setTextSize(10.0f);
 	    	}
     	}
-
-    	
-        @Override
-        public boolean onTouchEvent(MotionEvent event) {
-        	
-    		if ((System.currentTimeMillis() - lastTouchTime) > 500) {
-    			float x = event.getX();
-    			float y = event.getY();
-    		
-    			
-    			if( !addTower && checkCollision(x, 400.0f, y, 50.0f, 50.0f, 50.0f) ) {
-    				addTower = true;
-    			} else if( !addTower && checkCollision( x, powerup.getX(), y, powerup.getY(), 50.0f, 10.0f) ) {
-    				powerup.setStatus(Powerup.STATUS_PICKED_UP);
-    				if( powerup.getType() == Powerup.TYPE_BLOW ) {
-    					blowDetector.begin();
-    				}
-    			} else if( addTower ) {
-	    			if( y <= 150.0f ) { 
-	    				addTower( x, 125.0f, 150.0f, 1, 1750);
-	    			} else if( y <= 225.0f ) {
-	    				addTower( x, 200.0f, 150.0f, 2, 1750);
-	    			} else {
-	    				addTower( x, 275.0f, 150.0f, 3, 1750);
-	    			}
-    				addTower = false;
-    			}
-
-    			
-    			lastTouchTime = System.currentTimeMillis();
-    			
-    			return true;
-    		} else {
-    			return false;
-    		}
+        
+        private void checkPickupPowerup(float x, float y) {
+			for( int i=0; i < powerups.size(); i++ ) {
+				if( powerups.get(i).getStatus() == Powerup.STATUS_DROPPED 
+				 && checkCollision( x, powerups.get(i).getX(), y, powerups.get(i).getY(), 50.0f, 10.0f) ) {
+					powerups.get(i).setStatus(Powerup.STATUS_PICKED_UP);
+					if( powerups.get(i).getType() == Powerup.TYPE_BLOW ) {
+						blowDetector.begin();
+			    		numBlows++;
+			    		blowPrntCtr = 0;
+					} else {
+						numShakes++;
+						shakePrntCtr = 0;
+					}
+					break;
+				}
+			}
         }
         
     	private void addTower(float x, float y, float fireRadius, int row, long fireInterval) {
@@ -251,39 +259,41 @@ class DrawableView extends View implements BlowListener, ShakeListener {
 			lvlPrtCtr = 0;
     	}
     	
+    	private final static float BASE_SPEED = 0.75f;
+    	
     	private void addBaddies(int level) {
     		if( numBaddies < (level) * 10) {
-	    		if ((System.currentTimeMillis() - lastBaddieTime) > (3500 - (numBaddies*10) ) ) {
+	    		if ((System.currentTimeMillis() - lastBaddieTime) > (3000 - (numBaddies*10) ) ) {
 	            	float y = 0.0f;
 	    			float x = 0.0f;
 	    			
 	    			float rand = random.nextFloat();
-	    			float speed = (float)level/10.0f;
+	    			float lvlSpeed = (float)level/10.0f;
 	    			boolean added = false;
 
 	        		if( rand <= 0.3f ) {
 	        			if(!kegs.get(0).pickedUp()) {
-	        				y = 150.0f;
-	        				baddies1.add( new Baddie( (direction1 == -1) ? 480.0f:x, y, (1+speed) * direction1 ));
+	        				y = 125.0f;
+	        				baddies1.add( new Baddie( sprite, (direction1 == -1) ? 480.0f:x, y, (BASE_SPEED+lvlSpeed) * direction1 ));
 	        				added = true;
 	        			}
 	        		}
 	        		if( rand <= 0.6f && !added  ) {
 	        			if(!kegs.get(1).pickedUp()) {
-	        				y = 225.0f;
-	        				baddies2.add( new Baddie( (direction2 == -1) ? 480.0f:x, y, (1+speed) * direction2));
+	        				y = 200.0f;
+	        				baddies2.add( new Baddie( sprite, (direction2 == -1) ? 480.0f:x, y, (BASE_SPEED+lvlSpeed) * direction2));
 	        				added = true;
 	        			}
 	        		} 
 	        		if( rand <= 0.9f && !added ) {
 	        			if(!kegs.get(2).pickedUp()) {
-	        				y = 300.0f;
-	        				baddies3.add( new Baddie( (direction3 == -1) ? 480.0f:x, y, (1+speed) * direction3 ) );
+	        				y = 275.0f;
+	        				baddies3.add( new Baddie( sprite, (direction3 == -1) ? 480.0f:x, y, (BASE_SPEED+lvlSpeed) * direction3 ) );
 	        				added = true;
 	        			}
 	        		}
 	        		
-	        		ensureAdded(added, x, y, speed);
+	        		ensureAdded(added, x, y, lvlSpeed);
 	        		
 	        		numBaddies++;
 	                lastBaddieTime = System.currentTimeMillis();
@@ -293,20 +303,20 @@ class DrawableView extends View implements BlowListener, ShakeListener {
     		}
     	}
     	
-    	private void ensureAdded(boolean added, float x, float y, float speed) {
+    	private void ensureAdded(boolean added, float x, float y, float lvlSpeed) {
     		if( !added ) {
     			for(int i=0; i<kegs.size(); i++) {
     				if( !kegs.get(i).pickedUp() && i == 0 ) {
-        				y = 150.0f;
-        				baddies1.add( new Baddie( (direction1 == -1) ? 480.0f:x, y, (1+speed) * direction1 ) );
+        				y = 125.0f;
+        				baddies1.add( new Baddie( sprite, (direction1 == -1) ? 480.0f:x, y, (BASE_SPEED+lvlSpeed) * direction1 ) );
         				break;
     				} else if( !kegs.get(i).pickedUp() && i == 1 ) {
-        				y = 225.0f;
-        				baddies2.add( new Baddie( (direction2 == -1) ? 480.0f:x, y, (1+speed) * direction2 ) );
+        				y = 200.0f;
+        				baddies2.add( new Baddie( sprite, (direction2 == -1) ? 480.0f:x, y, (BASE_SPEED+lvlSpeed) * direction2 ) );
         				break;
     				} else if( !kegs.get(i).pickedUp() && i == 2 ) {
-        				y = 300.0f;
-        				baddies3.add( new Baddie( (direction3 == -1) ? 480.0f:x, y, (1+speed) * direction3 ) );
+        				y = 275.0f;
+        				baddies3.add( new Baddie( sprite, (direction3 == -1) ? 480.0f:x, y, (BASE_SPEED+lvlSpeed) * direction3 ) );
         				break;
     				}
     			}
@@ -317,8 +327,8 @@ class DrawableView extends View implements BlowListener, ShakeListener {
     		for(int i=0; i < baddies.size(); i++ ) {
     			Baddie baddie = baddies.get(i);
     			if( !baddie.isDead() ) {
-	    			//canvas.drawBitmap(icon, baddie.getX(), baddie.getY(), null);
-	    			canvas.drawCircle(baddie.getX(), baddie.getY(), 10.0f, paint);
+    				baddie.draw(canvas);
+    				baddie.Update(System.currentTimeMillis());
 	    			baddie.setX( baddie.getX() + baddie.getSpeed() );
 	    			
     				if( baddie.hasKeg()) {
@@ -327,7 +337,6 @@ class DrawableView extends View implements BlowListener, ShakeListener {
     				
 	    			if( baddie.getX() > 480.0f || baddie.getX() < 0.0f ) {
 	    				if( baddie.hasKeg() ) {
-	    					//kegs.remove(baddie.getKeg());
 	    					baddie.getKeg().remove(true);
 	    					baddie.dropKeg();
 	    					numKegs--;
@@ -360,14 +369,14 @@ class DrawableView extends View implements BlowListener, ShakeListener {
     	
     	private void dropPowerup(Baddie baddie) {
     		float drop = random.nextFloat();
-    		if( powerup.getStatus() == Powerup.STATUS_INACTIVE  /*&& drop <= 0.5f*/ ) {
-        		powerup.setType(random.nextFloat());
-        		powerup.setX(baddie.getX());
-        		powerup.setY(baddie.getY());
-        		powerup.setStatus(Powerup.STATUS_DROPPED);
-    		//	powerups.add( new Powerup(random.nextFloat(), baddie.getX(), baddie.getY()) );
+    		if( drop >= 0.5f ) {
+    			float type = random.nextFloat();
+    			if( type >= 0.5f ) {
+    				powerups.add(new ShakePowerup(baddie.getX(), baddie.getY()));
+    			} else {
+    				powerups.add(new BlowPowerup(baddie.getX(), baddie.getY()));
+    			}
     		}
-
     	}
     	
     	private void moveKeg(Baddie baddie) {
@@ -401,7 +410,6 @@ class DrawableView extends View implements BlowListener, ShakeListener {
 					if((System.currentTimeMillis() - towers[i].lastFireTime()) > towers[i].getFireInterval() ) {
 						if( checkCollision(towers[i], baddies.get(j)) ) {
 							towers[i].setBaddie(baddies.get(j));
-							//towers[i].setBaddie(j);
 							towers[i].setFiring(true);
 							towers[i].setLastFireTime(System.currentTimeMillis());
 							break;
@@ -422,10 +430,6 @@ class DrawableView extends View implements BlowListener, ShakeListener {
     			}
     		}
     	}
-    	
-    	/*private boolean checkPowerupCollision( ) {
-    		checkCollision(x, 400.0f, y, 50.0f, 50.0f, 50.0f)
-    	}*/
     	
     	//Polymorph these...
     	private boolean checkCollision(float x1, float x2, float y1, float y2, float r1, float r2) {
@@ -493,30 +497,38 @@ class DrawableView extends View implements BlowListener, ShakeListener {
     	}
     	
     	public void onBlow() {
-    		if( powerup.getType() == Powerup.TYPE_BLOW && powerup.getStatus() == Powerup.STATUS_PICKED_UP ) {
-	    		powerup.setStatus(Powerup.STATUS_INACTIVE);
-	    		baddies1.removeAllElements();
-	    		baddies2.removeAllElements();
-	    		baddies3.removeAllElements();
-	    		baddies1.clear();
-	    		baddies2.clear();
-	    		baddies3.clear();
-	    		blowDetector.kill();
-	    		pwrUpPrtCtr = 0;
-    		}
+	    	for(int i=0; i < powerups.size(); i++ ) { 
+	    		if( powerups.get(i).getStatus() == Powerup.STATUS_PICKED_UP 
+	    		 && powerups.get(i).getType() == Powerup.TYPE_BLOW ) {
+		    		baddies1.removeAllElements();
+		    		baddies2.removeAllElements();
+		    		baddies3.removeAllElements();
+		    		baddies1.clear();
+		    		baddies2.clear();
+		    		baddies3.clear();
+		    		blowDetector.kill();
+		    		numBlows--;
+		    		powerups.remove(i);
+		    		break;
+	    		}
+	    	}
     	}
     	
     	public void onShake() {
-    		if( powerup.getType() == Powerup.TYPE_SHAKE && powerup.getStatus() == Powerup.STATUS_PICKED_UP ) {
-	    		powerup.setStatus(Powerup.STATUS_INACTIVE);
-	    		baddies1.removeAllElements();
-	    		baddies2.removeAllElements();
-	    		baddies3.removeAllElements();
-	    		baddies1.clear();
-	    		baddies2.clear();
-	    		baddies3.clear();
-    			pwrUpPrtCtr = 0;
-    		}
+	    	for(int i=0; i < powerups.size(); i++ ) { 
+	    		if( powerups.get(i).getStatus() == Powerup.STATUS_PICKED_UP 
+	    		 && powerups.get(i).getType() == Powerup.TYPE_SHAKE ) {
+		    		baddies1.removeAllElements();
+		    		baddies2.removeAllElements();
+		    		baddies3.removeAllElements();
+		    		baddies1.clear();
+		    		baddies2.clear();
+		    		baddies3.clear();
+		    		numShakes--;
+		    		powerups.remove(i);
+		    		break;
+	    		}
+	    	}
     	}
 
     }

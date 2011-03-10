@@ -1,6 +1,6 @@
 package com.g7;
 
-public class Powerup {
+public abstract class Powerup {
 	public final static int TYPE_SHAKE = 0;
 	public final static int TYPE_BLOW = 1;
 	
@@ -15,16 +15,17 @@ public class Powerup {
 	private boolean _active;
 	
 	public Powerup(float type, float x, float y) {
-		if( type < 0.5f ) {
+	/*	if( type < 0.5f ) {
 			_type = TYPE_SHAKE;
 		} else {
 			_type = TYPE_BLOW;
-		}
+		}*/
 		_x = x;
 		_y = y;
+		_status = STATUS_DROPPED;
 	}
 	
-	public void setType(float type) {
+	/*public void setType(float type) {
 		if( type < 0.5f ) {
 			_type = TYPE_SHAKE;
 		} else {
@@ -34,7 +35,9 @@ public class Powerup {
 	
 	public int getType() {
 		return _type;
-	}
+	}*/
+	public abstract int getType();
+	public abstract int getColor();
 	
 	public int getStatus() {
 		return _status;

@@ -31,14 +31,8 @@ public class Shake implements SensorEventListener{
 	}
 
 	public static Shake getShake(Context a,ShakeListener s){
-		if(shake == null){
-			shake = new Shake(a,s);
-		}
-	//	else{
-			//_s = s;
-		//}
+		shake = new Shake(a,s);
 		return shake;
-
 	}
 
 
