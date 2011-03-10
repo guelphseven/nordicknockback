@@ -14,6 +14,7 @@ public class BlowDetect extends Thread{
 	private ArrayList<BlowListener> listeners;
 	private int rate=8000, bufferSize=4096;
 	private AudioRecord recorder;
+	short[] buffer;
 		
 	public BlowDetect(BlowListener firstListener)
 	{
@@ -34,6 +35,9 @@ public class BlowDetect extends Thread{
 					recorder=new AudioRecord(AudioSource.MIC, rate,
 										 AudioFormat.CHANNEL_CONFIGURATION_MONO,
 										 AudioFormat.ENCODING_PCM_16BIT, bufferSize);
+					
+					buffer = new short[bufferSize];
+					
 					break;
 				}
 
@@ -41,10 +45,6 @@ public class BlowDetect extends Thread{
 				Log.v(""+Log.WARN, "Martin exception: " + e.getMessage() );
 			}
 		}
-		
-		try{
-			recorder.startRecording();
-		}catch(Exception e){}
 		
 		this.start();
 	}
@@ -72,21 +72,36 @@ public class BlowDetect extends Thread{
 		running=false;
 	}
 	
+	public void begin() {
+		running = true;
+		try{
+			recorder.startRecording();
+		}catch(Exception e){}
+	}
+	
 	public void run()
-	{
-		running=true;
-		
-		short buffer[]=new short[bufferSize];
-		while(running)
+	{	
+		while(true)
 		{
-			if (checkWave(buffer, bufferSize))
-			{
-				this.notifyListeners();
-				try{Thread.sleep(2000);}catch(Exception e){}
+			if (running) {
+				
+				if (checkWave(buffer, bufferSize))
+				{
+					this.notifyListeners();
+					try{Thread.sleep(2000);}catch(Exception e){}
+				}
 			}
 			try{Thread.sleep(200);}catch(Exception e){}
 		}
-		recorder.stop();
+	}
+	
+	public void killForever() throws Throwable {
+		try {
+			recorder.stop();
+			this.finalize();
+		} catch( Exception e ) {
+			
+		}
 	}
 	
 	boolean checkWave(short[] buffer, int bufferSize)
