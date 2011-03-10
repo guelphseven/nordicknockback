@@ -19,7 +19,8 @@ class DrawableView extends View {
         Paint paint;
         Rect widthHeight, iconWH;
         
-        int fps =0, frameCount = 0, gold = 5;
+        boolean addTower;
+        int fps =0, frameCount = 0, gold = 15;
         long lastFrameTime = 0, lastBaddieTime = 0, lastTouchTime = 0;
         
         int numTowers = 0, numBaddies = 1, numKegs = 3;//avoid divide by 0, monsters freq. incr. by divide
@@ -30,33 +31,9 @@ class DrawableView extends View {
         
         Tower[] towers = new Tower[25];
         Vector<Keg> kegs = new Vector<Keg>();
+        //Vector<Powerup> powerups = new Vector<Powerup>();
+        Powerup powerup;
         Random random;
-        
-        float[] linesHorizontal = {
-        		0.0f, 150.0f, 500.0f, 150.0f,
-        		0.0f, 225.0f, 500.0f, 225.0f,
-        		0.0f, 300.0f, 500.0f, 300.0f,
-        };
-        
-        float[] linesVertical = {
-        		230.0f, 320.0f, 230.0f, 150.0f,
-        		250.0f, 320.0f, 250.0f, 150.0f
-        };
-        
-        float[] towerSpots1 = {
-        		175.0f, 150.0f, 225.0f, 150.0f,
-        		255.0f, 150.0f, 305.0f, 150.0f,
-        };
-        
-        float[] towerSpots2 = {
-        		175.0f, 225.0f, 225.0f, 225.0f,
-        		255.0f, 225.0f, 305.0f, 225.0f,
-        };
-        
-        float[] towerSpots3 = {
-        		175.0f, 300.0f, 225.0f, 300.0f,
-        		255.0f, 300.0f, 305.0f, 300.0f,
-        };
         
     	public DrawableView(Context context) {
     		super(context);
@@ -72,22 +49,38 @@ class DrawableView extends View {
             kegs.add(new Keg(1, 240.0f, 150.0f));
             kegs.add(new Keg(2, 240.0f, 225.0f));
             kegs.add(new Keg(3, 240.0f, 300.0f));
+            powerup = new Powerup(0, 0.0f, 0.0f);
     	}
+    	
+        int towers1PlacedLeft, towers2PlacedLeft, towers3PlacedLeft,
+        towers1PlacedRight, towers2PlacedRight, towers3PlacedRight;
 
     	protected void onDraw(Canvas canvas) {
     		canvas.drawBitmap(backgroundImg, widthHeight, widthHeight, null);	
-        	canvas.drawLines(linesHorizontal, paint);
-        	canvas.drawLines(linesVertical, paint);
+    		if( addTower ) {
+    			paint.setColor(Color.GREEN);
+    		}
+        	canvas.drawLines(TowerPlacements.linesHorizontal, paint);
+        	paint.setColor(Color.WHITE);
+        	canvas.drawLines(TowerPlacements.linesVertical, paint);
         	
         	if( numKegs > 0 ) {
 	        	
 	        	//Tower spots
-	        	paint.setColor(Color.GREEN);
-	        	canvas.drawLines(towerSpots1, paint);
-	        	canvas.drawLines(towerSpots2, paint);
-	        	canvas.drawLines(towerSpots3, paint);
-	        	paint.setColor(Color.WHITE);
-	        	
+	        	/*paint.setColor(Color.GREEN);
+	        	//left
+	        	canvas.drawLines(TowerPlacements.towerSpots1left, 0, (towers1PlacedLeft + 1)*4, paint);
+	        	canvas.drawLines(TowerPlacements.towerSpots2left, 0, (towers2PlacedLeft + 1)*4, paint);
+	        	canvas.drawLines(TowerPlacements.towerSpots3left, 0, (towers3PlacedLeft + 1)*4, paint);
+	        	//right
+	        	canvas.drawLines(TowerPlacements.towerSpots1right, 0, (towers1PlacedRight + 1)*4, paint);
+	        	canvas.drawLines(TowerPlacements.towerSpots2right, 0, (towers1PlacedRight + 1)*4, paint);
+	        	canvas.drawLines(TowerPlacements.towerSpots3right, 0, (towers1PlacedRight + 1)*4, paint);
+	        	paint.setColor(Color.WHITE);*/
+        		paint.setColor(Color.GREEN);
+        		canvas.drawCircle( 400.0f, 50.0f, 30.0f, paint);
+        		paint.setColor(Color.WHITE);
+        		
 	        	drawTowers(canvas);
             
 	        	//Add and draw the three rows of baddies
@@ -96,10 +89,23 @@ class DrawableView extends View {
             	drawBaddies(canvas, baddies2, 2);
             	drawBaddies(canvas, baddies3, 3);
 
+            	//Powerups
+	        	if( powerup.getActive() ) {
+	        		if( powerup.getType() == Powerup.TYPE_BLOW ) {
+	        			paint.setColor(Color.CYAN);
+	        		} else {
+	        			paint.setColor(Color.DKGRAY);
+	        		}
+	        		canvas.drawCircle(powerup.getX(), powerup.getY(), 7.5f, paint);
+		        	paint.setColor(Color.WHITE);
+	        	}
+	        	
         		//Kegs
 	        	paint.setColor(Color.RED);
 	        	for(int i=0; i < kegs.size(); i++ ) {
-	        		canvas.drawCircle(kegs.get(i).getX(), kegs.get(i).getY(), 7.5f, paint);
+	        		if( !kegs.get(i).removed() ) {
+	        			canvas.drawCircle(kegs.get(i).getX(), kegs.get(i).getY(), 7.5f, paint);
+	        		}
 	        	}
 	        	paint.setColor(Color.WHITE);
     		
@@ -111,6 +117,13 @@ class DrawableView extends View {
             	canvas.drawText("gold: "+gold, 75.0f, 25.0f, paint);
             	canvas.drawText("gold: "+gold, 75.0f, 25.0f, paint);
             	displayKegStatus(canvas);
+            	
+            	if( numTowers == 24 ) {
+                	canvas.drawText("Tower limit reached!", 150.0f, 125.0f, paint);
+            	}
+            	if( gold < 5 && addTower ) {
+            		canvas.drawText("Not enough gold!", 175.0f, 150.0f, paint);
+            	}
             } else {
             	canvas.drawText("fps: "+fps, 25.0f, 25.0f, paint);
             	canvas.drawText("gold:"+gold, 75.0f, 25.0f, paint);
@@ -121,18 +134,12 @@ class DrawableView extends View {
     	}
     	
     	private void displayKegStatus(Canvas canvas) {
-    		for(int i = 0; i < kegs.size(); i++ ) {
+    		for(int i = 0; i < numKegs; i++ ) {
     			canvas.drawText("keg", 200.0f + (i*25.0f), 25.0f, paint);
     		}
     	}
     	
-    	private void checkPlacement(float[] towerSpots, float x, float y, int row ) {
-    		for( int i=0; i < towerSpots.length - 2; i+=2 ) {
-    			if( x >= towerSpots[i] && x <= towerSpots[i+2] ) {
-    				addTower((towerSpots[i]+towerSpots[i+2])/2, y, 150.0f, row, 2000);
-    			}
-    		}
-    	}
+
     	
         @Override
         public boolean onTouchEvent(MotionEvent event) {
@@ -140,14 +147,25 @@ class DrawableView extends View {
     		if ((System.currentTimeMillis() - lastTouchTime) > 500) {
     			float x = event.getX();
     			float y = event.getY();
+    		
     			
-    			if( y <= 150.0f ) {
-    				checkPlacement( towerSpots1, x, 125.0f, 1);
-    			} else if( y <= 225.0f ) {
-    				checkPlacement( towerSpots2, x, 200.0f, 2);
-    			} else if( y <= 300.0f ) {
-    				checkPlacement( towerSpots3, x, 275.0f, 3);
+    			if( !addTower && checkCollision(x, 400.0f, y, 50.0f, 50.0f, 50.0f) ) {
+    				addTower = true;
+    			} else if( !addTower && checkCollision( x, powerup.getX(), y, powerup.getY(), 50.0f, 10.0f) ) {
+    				//powerup.fire();
+    				powerup.setActive(false);
+    			} else if( addTower ) {
+	    			if( y <= 150.0f ) { 
+	    				addTower( x, 125.0f, 150.0f, 1, 1750);
+	    			} else if( y <= 225.0f ) {
+	    				addTower( x, 200.0f, 150.0f, 2, 1750);
+	    			} else {
+	    				addTower( x, 275.0f, 150.0f, 3, 1750);
+	    			}
+    				addTower = false;
     			}
+
+    			
     			lastTouchTime = System.currentTimeMillis();
     			
     			return true;
@@ -157,37 +175,76 @@ class DrawableView extends View {
         }
         
     	private void addTower(float x, float y, float fireRadius, int row, long fireInterval) {
-    		if( gold > 2 ) {
-	    		towers[numTowers] = new Tower(x, y, fireRadius, row, fireInterval);
-	    		numTowers++;
-	    		if(numTowers >= 25) {
-	    			numTowers = 24;
+    		if(numTowers < 24) {
+	    		if( gold >= 5 ) {
+		    		towers[numTowers] = new Tower(x, y, fireRadius, row, fireInterval);
+		    		numTowers++;
+		    		gold -= 5;
 	    		}
-	    		gold-=2;
     		}
     	}
     	
     	private void addBaddies() {
-    		if ((System.currentTimeMillis() - lastBaddieTime) > (2500 - (numBaddies*10) ) ) {
-    			float rand = random.nextFloat();
-
+    		if ((System.currentTimeMillis() - lastBaddieTime) > (3500 - (numBaddies*10) ) ) {
             	float y = 0.0f;
-        		if( rand <= 0.3f) {
-        			y = 150.0f;
-                	baddies1.add( new Baddie( 0.0f, y, 1.5f ));
-        		} else if( rand <= 0.6f ) {
-        			y = 225.0f;
-                	baddies2.add( new Baddie( 480.0f, y, -2.0f));
-        		} else if( rand <= 0.9f ) {
-        			y = 300.0f;
-                	baddies3.add( new Baddie( 480.0f, y, -1.5f ) );
-        		} else {
-        			y = 300.0f;
-                	baddies3.add( new Baddie( 0.0f, y, 2.0f ));
+    			float rand = random.nextFloat();
+    			boolean added = false;
+    			
+    			int direction = 1;
+    			float x = 0.0f;
+    			
+    			float randDir = random.nextInt();
+    			if( randDir > 0.5 ) {
+    				direction = -1;
+    				x = 480.0f;
+    			}
+            	
+        		if( rand <= 0.3f ) {
+        			if(!kegs.get(0).pickedUp()) {
+        				y = 150.0f;
+        				baddies1.add( new Baddie( x, y, 1.15f * direction ));
+        				added = true;
+        			}
         		}
+        		if( rand <= 0.6f && !added  ) {
+        			if(!kegs.get(1).pickedUp()) {
+        				y = 225.0f;
+        				baddies2.add( new Baddie( x, y, 1.25f * direction));
+        				added = true;
+        			}
+        		} 
+        		if( rand <= 0.9f && !added ) {
+        			if(!kegs.get(2).pickedUp()) {
+        				y = 300.0f;
+        				baddies3.add( new Baddie( x, y, 1.35f * direction ) );
+        				added = true;
+        			}
+        		}
+        		
+        		ensureAdded(added, x, y, direction);
         		
         		numBaddies++;
                 lastBaddieTime = System.currentTimeMillis();
+    		}
+    	}
+    	
+    	private void ensureAdded(boolean added, float x, float y, int direction) {
+    		if( !added ) {
+    			for(int i=0; i<kegs.size(); i++) {
+    				if( !kegs.get(i).pickedUp() && i == 0 ) {
+        				y = 150.0f;
+        				baddies1.add( new Baddie( x, y, 1.35f * direction ) );
+        				break;
+    				} else if( !kegs.get(i).pickedUp() && i == 1 ) {
+        				y = 225.0f;
+        				baddies2.add( new Baddie( x, y, 1.25f * direction ) );
+        				break;
+    				} else if( !kegs.get(i).pickedUp() && i == 2 ) {
+        				y = 300.0f;
+        				baddies3.add( new Baddie( x, y, 1.25f * direction ) );
+        				break;
+    				}
+    			}
     		}
     	}
     	
@@ -204,29 +261,49 @@ class DrawableView extends View {
     				}
     				
 	    			if( baddie.getX() > 480.0f || baddie.getX() < 0.0f ) {
-	    				gold -= 1;
+	    				gold -= 5;
 	    				if( baddie.hasKeg() ) {
-	    					kegs.remove(baddie.getKeg());
+	    					//kegs.remove(baddie.getKeg());
+	    					baddie.getKeg().remove(true);
+	    					baddie.dropKeg();
+	    					numKegs--;
 	    				}
 	    				baddies.remove(baddie);
+	    				continue;
 	    			}
 	    			
 	    			if( baddie.getHealth() <= 0) {
 	    				baddie.setDead(true);
 	    				if( baddie.hasKeg() ) {
 	    					dropKeg(baddie);
+	    				} else {
+	    					//Based on random
+	    					dropPowerup(baddie);
 	    				}
 	    				baddies.remove(baddie);
 	    				gold++;
+	    				continue;
 	    			}
 	    			
 	    			for( int j = 0; j < kegs.size(); j++ ) {
-	    				if( checkCollision( baddie, kegs.get(j) ) ) {
-	    					baddie.pickupKeg(kegs.get(j));
+	    				if( !kegs.get(j).pickedUp() && checkCollision( baddie, kegs.get(j) ) ) {
+	    					pickupKeg(kegs.get(j),baddie);
 	    				}
 	    			}
     			}
     		}
+    	}
+    	
+    	private void dropPowerup(Baddie baddie) {
+    		float drop = random.nextFloat();
+    		if( !powerup.getActive() && drop <= 0.5f ) {
+        		powerup.setType(random.nextFloat());
+        		powerup.setX(baddie.getX());
+        		powerup.setY(baddie.getY());
+        		powerup.setActive(true);
+    		//	powerups.add( new Powerup(random.nextFloat(), baddie.getX(), baddie.getY()) );
+    		}
+
     	}
     	
     	private void moveKeg(Baddie baddie) {
@@ -239,23 +316,14 @@ class DrawableView extends View {
     		if( baddie.hasKeg() ) {
     			baddie.getKeg().setX(baddie.getX());
     			baddie.getKeg().pickUp(false);
+    			baddie.dropKeg();
     		}
     	}
     	
-    /*	private void pickupKeg(int row, Baddie baddie) {
-			if( row == 1 && !keg1Picked ) {
-				baddie.pickupKeg(keg);
-				keg1Picked = true;
-			}
-			if( row == 2 && !keg2Picked ) {
-				baddie.pickupKeg(row);
-				keg2Picked = true;
-			}
-			if( row == 3 && !keg3Picked ) {
-				baddie.pickupKeg(row);
-				keg3Picked = true;
-			}
-    	}*/
+    	private void pickupKeg(Keg keg, Baddie baddie) {
+    		keg.pickUp(true);
+    		baddie.pickupKeg(keg);
+    	}
     	
     	private void drawTowers(Canvas canvas) {
     		for(int i=0; i< numTowers; i++) {
@@ -291,11 +359,15 @@ class DrawableView extends View {
     		}
     	}
     	
+    	/*private boolean checkPowerupCollision( ) {
+    		checkCollision(x, 400.0f, y, 50.0f, 50.0f, 50.0f)
+    	}*/
+    	
     	//Polymorph these...
-    	private boolean checkCollision(Baddie baddie, Keg keg) {
-    		float distX = baddie.getX() - keg.getX();
-    		float distY = baddie.getY() - keg.getY();
-    		float radii = 10.0f + 10.0f;
+    	private boolean checkCollision(float x1, float x2, float y1, float y2, float r1, float r2) {
+    		float distX = x2 - x1;
+    		float distY = y2 - y1;
+    		float radii = r1 + r2;
     		
     		if( (distX * distX) + (distY * distY) < (radii * radii) ) {
     			return true;
@@ -305,15 +377,11 @@ class DrawableView extends View {
     	}
     	
     	private boolean checkCollision(Tower tower, Baddie baddie) {
-    		float distX = tower.getX() - baddie.getX();
-    		float distY = tower.getY() - baddie.getY();
-    		float radii = tower.getFireRadius() + 50.0f;
-    		
-    		if( (distX * distX) + (distY * distY) < (radii * radii) ) {
-    			return true;
-    		}
-    			
-    		return false;
+    		return checkCollision(tower.getX(), baddie.getX(), tower.getY(), baddie.getY(), tower.getFireRadius(), 10.0f);
+    	}
+    	
+    	private boolean checkCollision(Baddie baddie, Keg keg ) {
+    		return checkCollision(keg.getX(), baddie.getX(), keg.getY(), baddie.getY(), 10.0f, 10.0f);
     	}
     	
     	private boolean checkCollision(Tower tower) {

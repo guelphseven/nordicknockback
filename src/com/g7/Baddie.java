@@ -53,6 +53,10 @@ public class Baddie {
     	_hasKeg = true;
     }
     
+    public void dropKeg() {
+    	_hasKeg = false;
+    }
+    
     public void setHealth( int health ) {
     	_health = health;
     }
