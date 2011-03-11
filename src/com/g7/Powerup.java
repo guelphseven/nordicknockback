@@ -38,6 +38,7 @@ public abstract class Powerup {
 	}*/
 	public abstract int getType();
 	public abstract int getColor();
+	public abstract void playSound();
 	
 	public int getStatus() {
 		return _status;

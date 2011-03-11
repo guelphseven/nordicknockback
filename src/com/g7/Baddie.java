@@ -1,5 +1,6 @@
 package com.g7;
 
+import android.content.Context;
 import android.graphics.*;
 
 public class Baddie {
@@ -8,19 +9,23 @@ public class Baddie {
     private int mXPos;
     private int mYPos;
     private Rect mSRectangle;
+    
     private int mFPS;
     private int mNoOfFrames;
     private int mCurrentFrame;
     private long mFrameTimer;
     private int mSpriteHeight;
     private int mSpriteWidth;
+    
     private boolean _dead = false;
     private int _health = 3;
-    private boolean _hasKeg = false;
+   // private boolean _hasKeg = false;
     private Keg _keg;
-    Rect destRect;
+    private Rect destRect;
+    
+    private Sound _deathSound;
 	
-	public Baddie( Bitmap bitmap, float x, float y, int health, float speed ) {
+	public Baddie( Context context, Bitmap bitmap, float x, float y, int health, float speed ) {
 		_x = x;
 		_y = y;
         _speed = speed;
@@ -30,6 +35,7 @@ public class Baddie {
         mFrameTimer = 0;
         mCurrentFrame = 0;
         init( bitmap, 32, 32, 10, 5 );
+        _deathSound = new Sound(context);
 	}
 	 
     public void init(Bitmap theBitmap, int Height, int Width, int theFPS, int theFrameCount) {
@@ -44,8 +50,12 @@ public class Baddie {
         mNoOfFrames = theFrameCount;
     }
     
+    public void playSound() {
+    	_deathSound.playSound(R.raw.enemy_death);
+    }
+    
     public boolean hasKeg() {
-    	return _hasKeg;
+    	return (_keg != null);
     }
     
     public Keg getKeg() {
@@ -54,11 +64,12 @@ public class Baddie {
     
     public void pickupKeg(Keg keg) {
     	_keg = keg;
-    	_hasKeg = true;
+    	//_hasKeg = true;
     }
     
     public void dropKeg() {
-    	_hasKeg = false;
+    	//_hasKeg = false;
+    	_keg = null;
     }
     
     public void setHealth( int health ) {
@@ -111,7 +122,7 @@ public class Baddie {
             if(mCurrentFrame >= mNoOfFrames - 1) {
             	rewind = true;
             }
-            if( mCurrentFrame == 1 ) {
+            if( mCurrentFrame == 0 ) {
             	rewind = false;
             }
         }

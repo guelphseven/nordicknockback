@@ -2,15 +2,22 @@ package com.g7;
 
 import java.math.*;
 
-public class Tower {
+import android.content.Context;
+import android.media.MediaPlayer;
+
+public class Tower implements MediaPlayer.OnCompletionListener {
 	private float _x, _y, _y0, _x0, _targetX, _targetY, _fireX, _fireY, _fireRadius;
 	private boolean _fire = false;
 	private Baddie _baddieTarget;
-	int _row;
-	long _fireInterval;
-	long _lastFireTime = 0;
+	private int _row;
 	
-	public Tower( float startX, float startY, float fireRadius, int towerRow, long fireInterval ) {
+	private long _fireInterval;
+	private long _lastFireTime = 0;
+	
+	private Sound _sound;
+	private boolean _soundPlaying;
+	
+	public Tower( Context context, float startX, float startY, float fireRadius, int towerRow, long fireInterval ) {
 		_x = startX;
 		_y = startY;
 		_fireX = _x;
@@ -18,6 +25,19 @@ public class Tower {
 		_fireRadius = fireRadius;
 		_row = towerRow;
 		_fireInterval = fireInterval;
+		_sound = new Sound(context);
+		//_sound.addListener(this);
+	}
+	
+	public void onCompletion(MediaPlayer mp) {
+		_soundPlaying = false;
+	}
+	
+	public void playSound() {
+		//if( !_soundPlaying ) {
+		//	_soundPlaying = true;
+			_sound.playSound(R.raw.rockthrow);
+		//}
 	}
 	
 	public long lastFireTime() {

@@ -24,7 +24,7 @@ public class Shake implements SensorEventListener{
 	private Shake(Context a,ShakeListener s){
 		this.s = s;
 		sensorMgr = (SensorManager) a.getSystemService(a.SENSOR_SERVICE);
-		boolean accelSupported = sensorMgr.registerListener(this,sensorMgr.getDefaultSensor(SensorManager.SENSOR_ACCELEROMETER),SensorManager.SENSOR_DELAY_GAME);
+		boolean accelSupported = sensorMgr.registerListener(this,sensorMgr.getDefaultSensor(SensorManager.SENSOR_ACCELEROMETER),SensorManager.SENSOR_DELAY_UI);
 		if (!accelSupported) {
 			sensorMgr.unregisterListener(this);
 		}
@@ -49,7 +49,7 @@ public class Shake implements SensorEventListener{
 		if (mySensor.getType() == SensorManager.SENSOR_ACCELEROMETER) {
 			long curTime = System.currentTimeMillis();
 			long diffTime = curTime - lastUpdate;
-			if(diffTime > 100) {
+			if(diffTime > 1000) {
 				lastUpdate = curTime;
 
 				x = event.values[SensorManager.DATA_X];
@@ -57,7 +57,7 @@ public class Shake implements SensorEventListener{
 				z = event.values[SensorManager.DATA_Z];
 
 				float speed = Math.abs(x+y+z - last_x - last_y - last_z) / diffTime * 10000;
-				if(speed > threshold){
+				if( speed > threshold ){
 					s.onShake();
 				}
 				last_x = x;

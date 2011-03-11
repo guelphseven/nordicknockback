@@ -7,12 +7,17 @@ import android.content.Context;
 
 public class Sound{
 	private Context c;
+	private MediaPlayer.OnCompletionListener _additionalListener;
 
 	/**
 	*Easist just to pass in the Runnable class
 	*/
 	public Sound(Context c){
 		this.c = c;
+	}
+	
+	public void addListener(MediaPlayer.OnCompletionListener listener) {
+		_additionalListener = listener;
 	}
 
 	/**
@@ -22,6 +27,9 @@ public class Sound{
 		MediaPlayer mp = MediaPlayer.create(c, sound);
 		mp.setOnCompletionListener(new MediaPlayer.OnCompletionListener(){
 			public void onCompletion(MediaPlayer mp){
+				if( _additionalListener != null ) {
+					_additionalListener.onCompletion(mp);
+				}
 				mp.release();
 			}
 		});
