@@ -14,7 +14,7 @@ import android.content.Context;
 public class Shake implements SensorEventListener{
 	private SensorManager sensorMgr;
 	private ShakeListener s;
-	private long lastUpdate = -1;
+	private long lastUpdate;
 	private float x, y, z;
 	private float last_x, last_y, last_z;
 	private int threshold = 800;
@@ -24,10 +24,11 @@ public class Shake implements SensorEventListener{
 	private Shake(Context a,ShakeListener s){
 		this.s = s;
 		sensorMgr = (SensorManager) a.getSystemService(a.SENSOR_SERVICE);
-		boolean accelSupported = sensorMgr.registerListener(this,sensorMgr.getDefaultSensor(SensorManager.SENSOR_ACCELEROMETER),SensorManager.SENSOR_DELAY_UI);
+		boolean accelSupported = sensorMgr.registerListener(this,sensorMgr.getDefaultSensor(SensorManager.SENSOR_ACCELEROMETER),SensorManager.SENSOR_DELAY_GAME);
 		if (!accelSupported) {
 			sensorMgr.unregisterListener(this);
 		}
+		lastUpdate = System.currentTimeMillis();
 	}
 
 	public static Shake getShake(Context a,ShakeListener s){
@@ -55,8 +56,13 @@ public class Shake implements SensorEventListener{
 				x = event.values[SensorManager.DATA_X];
 				y = event.values[SensorManager.DATA_Y];
 				z = event.values[SensorManager.DATA_Z];
+				
+				float dx = Math.abs( x - last_x );
+				float dy = Math.abs( y - last_y );
+				float dz = Math.abs( z - last_z );
 
-				float speed = Math.abs(x+y+z - last_x - last_y - last_z) / diffTime * 10000;
+				float speed = (dx + dy + dz);// / diffTime;
+				System.out.println("s: " + speed +"dx: " + dx + "dy: "+ dy + "dz:" + dz);
 				if( speed > threshold ){
 					s.onShake();
 				}

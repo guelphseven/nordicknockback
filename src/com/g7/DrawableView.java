@@ -118,7 +118,7 @@ class DrawableView extends View implements BlowListener, ShakeListener {
 
         blowDetector = new BlowDetect(this);
         shakeDetector = Shake.getShake(context, this);
-        shakeDetector.setThreshold(800);
+        shakeDetector.setThreshold(35);
         
         sound = new Sound(context);
 	}
@@ -188,13 +188,14 @@ class DrawableView extends View implements BlowListener, ShakeListener {
 		if( addTower ) {
 			paint.setAlpha(128);
 			paint.setColor(Color.GREEN);
+	    	canvas.drawLines(linesHorizontal, paint);
 	    } else if( towerDisp.getPrintCounter() < 60 ) {
 			paint.setColor(Color.RED);
+	    	canvas.drawLines(linesHorizontal, paint);
 			towerDisp.setPrintCounter(towerDisp.getPrintCounter() + 1);
 		}
 		paint.setAlpha(alpha);
-    	//canvas.drawLines(linesHorizontal, paint);
-    	//paint.setColor(Color.WHITE);
+    	paint.setColor(Color.WHITE);
 	}
 	
     @Override
@@ -486,14 +487,17 @@ class DrawableView extends View implements BlowListener, ShakeListener {
     			baddie.setX( baddie.getX() + baddie.getSpeed() );
     			
 				if( baddie.hasKeg()) {
-					moveKeg(baddie);
+					if(!baddie.getKeg().pickedUp())
+						dropKeg(baddie);
+					else
+						moveKeg(baddie);
 				}
 				
 				//Baddie reached end of screen
     			if( baddie.getX() > BASE_WIDTH || baddie.getX() < 0.0f ) {
     				if( baddie.hasKeg() ) {
     					baddie.getKeg().remove(true);
-    					dropKeg(baddie);
+    					//dropKeg(baddie);
     					numKegs--;
 						playSound(R.raw.kegloss);
     					if( numKegs <= 0 ) {
@@ -676,6 +680,18 @@ class DrawableView extends View implements BlowListener, ShakeListener {
         }
 	}
 	
+	private void removeBaddie() {
+		for(int i=0; i < baddies1.size(); i++ ) {
+			baddies1.get(i).dropKeg();
+		}
+		for(int i=0; i < baddies2.size(); i++ ) {
+			baddies2.get(i).dropKeg();
+		}
+		for(int i=0; i < baddies3.size(); i++ ) {
+			baddies3.get(i).dropKeg();
+		}
+	}
+	
 	public void onBlow() {
     	for(int i=0; i < powerups.size(); i++ ) { 
     		if( powerups.get(i).getStatus() == Powerup.STATUS_PICKED_UP 
@@ -697,7 +713,10 @@ class DrawableView extends View implements BlowListener, ShakeListener {
     		if( powerups.get(i).getStatus() == Powerup.STATUS_PICKED_UP 
     		 && powerups.get(i).getType() == Powerup.TYPE_SHAKE ) {
     			for(int j=0; j < kegs.size(); j++ ) {
-    				kegs.get(j).pickUp(false);
+    				if(kegs.get(i).pickedUp()) {
+    					kegs.get(j).pickUp(false);
+    					//removeBaddie();
+    				}
     			}
 	    		numShakes--;
 	    		powerups.get(i).playSound();
