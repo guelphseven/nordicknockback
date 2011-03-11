@@ -55,7 +55,7 @@ public class Baddie {
     }
     
     public boolean hasKeg() {
-    	return (_keg != null);
+    	return (_keg != null) ? _keg.pickedUp() : false;
     }
     
     public Keg getKeg() {
@@ -132,7 +132,7 @@ public class Baddie {
     }
 	 
     public void draw(Canvas canvas, Paint paint) {
-    	destRect.set((int)getX(), (int)getY(), (int)getX() + mSpriteWidth, (int)getY() + mSpriteHeight);
+    	destRect.set((int)getX()-16, (int)getY()-32, (int)getX() + mSpriteWidth-16, (int)getY() + mSpriteHeight-32);
       //  canvas.scale(2.0f, 2.0f, getX(), getY());
     	if( getSpeed() < 0 ) {
         	canvas.scale(-1,1,getX(),getY());

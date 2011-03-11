@@ -11,16 +11,17 @@ import android.util.Log;
 public class BlowDetect extends Thread{
 
 	private boolean running=false;
-	private ArrayList<BlowListener> listeners;
+	private BlowListener listener;
 	private int rate=8000, bufferSize=4096;
 	private AudioRecord recorder;
 	short[] buffer;
+	private long lastBlow = 0;
 		
 	public BlowDetect(BlowListener firstListener)
 	{
-		listeners=new ArrayList<BlowListener>();
-		if (firstListener!=null)
-				this.addListener(firstListener);
+		listener = firstListener;
+		//if (firstListener!=null)
+				//this.addListener(firstListener);
 		int[] possibleRates={1000,8000,11025,16000,22050,32000,48000,44100};
 		for (int i=0; i<8; i++)
 		{
@@ -49,7 +50,7 @@ public class BlowDetect extends Thread{
 		this.start();
 	}
 	
-	public void addListener(BlowListener toAdd)
+	/*public void addListener(BlowListener toAdd)
 	{
 		listeners.add(toAdd);
 	}
@@ -65,7 +66,7 @@ public class BlowDetect extends Thread{
 		{
 			l.onBlow();
 		}
-	}
+	}*/
 	
 	public void kill()
 	{
@@ -87,8 +88,11 @@ public class BlowDetect extends Thread{
 				
 				if (checkWave(buffer, bufferSize))
 				{
-					this.notifyListeners();
-					try{Thread.sleep(2000);}catch(Exception e){}
+					if( (System.currentTimeMillis() - lastBlow) > 3000 ) {
+						lastBlow = System.currentTimeMillis();
+						listener.onBlow();
+						try{Thread.sleep(2000);}catch(Exception e){}
+					}
 				}
 			}
 			try{Thread.sleep(200);}catch(Exception e){}

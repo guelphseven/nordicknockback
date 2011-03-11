@@ -5,7 +5,6 @@ public class Keg {
     float _x, _y;
 	boolean _pickedUp;
 	boolean _removed;
-	private Baddie _baddie;
 	
 	public Keg( int row, float x, float y ) {
 		_row = row;
@@ -31,21 +30,6 @@ public class Keg {
 	
 	public int getRow() {
 		return _row;
-	}
-	
-	public void setBaddie(Baddie baddie) {
-		_baddie = baddie;
-	}
-	
-	public Baddie getBaddie() {
-		return _baddie;
-	}
-	
-	public void update() {
-		if(pickedUp()) {
-			_x = getBaddie().getX();
-			_y = getBaddie().getY();
-		}
 	}
 	
 	//If the keg is moved offscreen

@@ -1,75 +1,97 @@
-/* Taken from http://android.themind-lab.com/post/2010/05/14/Dont-shake-my-phone!-How-to-detect-shake-motion-on-Android-phone.aspx
-*/
+/* The following code was written by Matthew Wiggins
+ * and is released under the APACHE 2.0 license
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ */
 package com.g7;
 
-import android.app.Activity;
-import android.os.Bundle;
-import android.widget.TextView;
-import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
+import android.hardware.SensorListener;
 import android.hardware.SensorManager;
 import android.content.Context;
+import java.lang.UnsupportedOperationException;
 
-public class Shake implements SensorEventListener{
-	private SensorManager sensorMgr;
-	private ShakeListener s;
-	private long lastUpdate;
-	private float x, y, z;
-	private float last_x, last_y, last_z;
-	private int threshold = 800;
-	private static Shake shake;
-	public TextView tv;
+public class Shake implements SensorListener 
+{
+  private static final int FORCE_THRESHOLD = 350;
+  private static final int TIME_THRESHOLD = 100;
+  private static final int SHAKE_TIMEOUT = 500;
+  private static final int SHAKE_DURATION = 1000;
+  private static final int SHAKE_COUNT = 3;
 
-	private Shake(Context a,ShakeListener s){
-		this.s = s;
-		sensorMgr = (SensorManager) a.getSystemService(a.SENSOR_SERVICE);
-		boolean accelSupported = sensorMgr.registerListener(this,sensorMgr.getDefaultSensor(SensorManager.SENSOR_ACCELEROMETER),SensorManager.SENSOR_DELAY_GAME);
-		if (!accelSupported) {
-			sensorMgr.unregisterListener(this);
-		}
-		lastUpdate = System.currentTimeMillis();
-	}
+  private SensorManager mSensorMgr;
+  private float mLastX=-1.0f, mLastY=-1.0f, mLastZ=-1.0f;
+  private long mLastTime, lastEvent = 0;
+  private OnShakeListener mShakeListener;
+  private Context mContext;
+  private int mShakeCount = 0;
+  private long mLastShake;
+  private long mLastForce;
 
-	public static Shake getShake(Context a,ShakeListener s){
-		shake = new Shake(a,s);
-		return shake;
-	}
+  public interface OnShakeListener
+  {
+    public void onShake();
+  }
 
+  public Shake(Context context) 
+  { 
+    mContext = context;
+    resume();
+  }
 
-	public void onAccuracyChanged(Sensor arg0, int arg1) {
-		// AUTO GENERATED METHOD STUB
-	}
+  public void setOnShakeListener(OnShakeListener listener)
+  {
+    mShakeListener = listener;
+  }
 
-	public void setThreshold(int i){
-		threshold = i;
-	}
+  public void resume() {
+    mSensorMgr = (SensorManager)mContext.getSystemService(Context.SENSOR_SERVICE);
+    if (mSensorMgr == null) {
+      throw new UnsupportedOperationException("Sensors not supported");
+    }
+    boolean supported = mSensorMgr.registerListener(this, SensorManager.SENSOR_ACCELEROMETER, SensorManager.SENSOR_DELAY_GAME);
+    if (!supported) {
+      mSensorMgr.unregisterListener(this, SensorManager.SENSOR_ACCELEROMETER);
+      throw new UnsupportedOperationException("Accelerometer not supported");
+    }
+  }
 
-	public void onSensorChanged(SensorEvent event) {
-		Sensor mySensor = event.sensor;
-		if (mySensor.getType() == SensorManager.SENSOR_ACCELEROMETER) {
-			long curTime = System.currentTimeMillis();
-			long diffTime = curTime - lastUpdate;
-			if(diffTime > 1000) {
-				lastUpdate = curTime;
+  public void pause() {
+    if (mSensorMgr != null) {
+      mSensorMgr.unregisterListener(this, SensorManager.SENSOR_ACCELEROMETER);
+      mSensorMgr = null;
+    }
+  }
 
-				x = event.values[SensorManager.DATA_X];
-				y = event.values[SensorManager.DATA_Y];
-				z = event.values[SensorManager.DATA_Z];
-				
-				float dx = Math.abs( x - last_x );
-				float dy = Math.abs( y - last_y );
-				float dz = Math.abs( z - last_z );
+  public void onAccuracyChanged(int sensor, int accuracy) { }
 
-				float speed = (dx + dy + dz);// / diffTime;
-				System.out.println("s: " + speed +"dx: " + dx + "dy: "+ dy + "dz:" + dz);
-				if( speed > threshold ){
-					s.onShake();
-				}
-				last_x = x;
-				last_y = y;
-				last_z = z;
-			}
-		}
-	}
+  public void onSensorChanged(int sensor, float[] values) 
+  {
+    if (sensor != SensorManager.SENSOR_ACCELEROMETER) return;
+    long now = System.currentTimeMillis();
+
+    if ((now - mLastForce) > SHAKE_TIMEOUT) {
+      mShakeCount = 0;
+    }
+
+    if ((now - mLastTime) > TIME_THRESHOLD) {
+      long diff = now - mLastTime;
+      float speed = Math.abs(values[SensorManager.DATA_X] + values[SensorManager.DATA_Y] + values[SensorManager.DATA_Z] - mLastX - mLastY - mLastZ) / diff * 10000;
+      if (speed > FORCE_THRESHOLD) {
+        if ((++mShakeCount >= SHAKE_COUNT) && (now - mLastShake > SHAKE_DURATION)) {
+          mLastShake = now;
+          mShakeCount = 0;
+          if (mShakeListener != null && (now - lastEvent) > 2000) { 
+            lastEvent = now;
+            mShakeListener.onShake(); 
+          }
+        }
+        mLastForce = now;
+      }
+      mLastTime = now;
+      mLastX = values[SensorManager.DATA_X];
+      mLastY = values[SensorManager.DATA_Y];
+      mLastZ = values[SensorManager.DATA_Z];
+    }
+  }
+
 }
